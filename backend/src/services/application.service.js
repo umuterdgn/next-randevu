@@ -2,6 +2,57 @@ import { Application } from "../models/Application.js";
 import { Business } from "../models/Business.js";
 import { User } from "../models/User.js";
 import { createError } from "../utils/appError.js";
+import bcrypt from "bcryptjs";
+
+/**
+ * İşletme adından URL dostu slug oluşturur
+ * Türkçe karakterleri temizler, küçük harfe çevirir, boşlukları tire ile değiştirir
+ * @param {string} name - İşletme adı
+ * @returns {Promise<string>} Benzersiz slug
+ */
+async function generateUniqueSlug(name) {
+  // Türkçe karakterleri temizle ve küçük harfe çevir
+  const turkishMap = {
+    ş: "s",
+    Ş: "s",
+    ğ: "g",
+    Ğ: "g",
+    ç: "c",
+    Ç: "c",
+    ı: "i",
+    İ: "i",
+    ö: "o",
+    Ö: "o",
+    ü: "u",
+    Ü: "u",
+  };
+
+  let slug = name
+    .split("")
+    .map((char) => turkishMap[char] || char)
+    .join("")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Sadece harf, rakam, boşluk ve tire bırak
+    .replace(/\s+/g, "-") // Boşlukları tire ile değiştir
+    .replace(/-+/g, "-") // Birden fazla tireyi tek tireye çevir
+    .trim("-"); // Baş ve sondaki tireleri temizle
+
+  // Slug boşsa rastgele bir değer kullan
+  if (!slug) {
+    slug = `isletme-${Date.now()}`;
+  }
+
+  // Slug'un benzersiz olup olmadığını kontrol et
+  let uniqueSlug = slug;
+  let counter = 1;
+
+  while (await Business.findOne({ slug: uniqueSlug })) {
+    uniqueSlug = `${slug}-${counter}`;
+    counter++;
+  }
+
+  return uniqueSlug;
+}
 
 // Başvuru kaydetme işlemi (Formdan gelen password de burada kaydedilir)
 export const submitApplication = async (payload) => Application.create(payload);
@@ -20,10 +71,12 @@ export const updateApplicationStatus = async (applicationId, status) => {
 
   // Onaylandıysa İşletmeyi oluştur
   const business_id = `biz_${app._id.toString().slice(-8)}`;
+  const slug = await generateUniqueSlug(app.business_name);
   let business = await Business.findOne({ business_id });
   if (!business) {
     business = await Business.create({
       business_id,
+      slug,
       name: app.business_name,
       phone: app.phone,
       email: app.email,
@@ -35,6 +88,7 @@ export const updateApplicationStatus = async (applicationId, status) => {
   // Onaylandıysa Kullanıcıyı oluştur
   const existing = await User.findOne({ business_id, email: app.email });
   if (!existing) {
+    const hashedPassword = await bcrypt.hash(app.password, 10);
     await User.create({
       business_id,
       name: app.business_name, // (İstersen burayı `${app.business_name} Yetkilisi` yapabilirsin)
@@ -42,7 +96,7 @@ export const updateApplicationStatus = async (applicationId, status) => {
       phone: app.phone,
       
       // KRİTİK DEĞİŞİKLİK: Artık sabit "Admin123!" yerine başvuranın kendi şifresini alıyoruz.
-      password: app.password, 
+      password: hashedPassword,
       
       role: "admin",
     });

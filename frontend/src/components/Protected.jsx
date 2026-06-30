@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext";
 export default function Protected({ children, role }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) return <Navigate to={user.role === "owner" ? "/owner" : "/business"} />;
+  // Allow business role to access business routes
+  if (role && user.role !== role && !(role === "admin" && user.role === "business")) {
+    return <Navigate to={user.role === "owner" ? "/owner" : "/business"} />;
+  }
   return children;
 }

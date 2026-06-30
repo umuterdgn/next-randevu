@@ -2,8 +2,11 @@ import { body, param } from "express-validator";
 
 export const createServiceRules = [
   body("name").trim().notEmpty().withMessage("Service name is required"),
-  body("duration_minutes").isInt({ min: 5 }).withMessage("duration_minutes must be >= 5"),
-  body("price").optional().isFloat({ min: 1 }),
+  body("duration").isInt({ min: 5 }).withMessage("duration must be >= 5 minutes"),
+  body("price").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("price must be a positive number"),
+  body("description").optional({ checkFalsy: true, nullable: true }).isString().withMessage("description must be a string"),
+  body("critical_points").optional({ checkFalsy: true, nullable: true }).isString().withMessage("critical_points must be a string"),
+  body("process_steps").optional({ checkFalsy: true, nullable: true }).isString().withMessage("process_steps must be a string"),
 ];
 
 export const createCustomerRules = [

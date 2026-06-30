@@ -14,17 +14,14 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     phone: { type: String, default: "" },
     password: { type: String, required: true, minlength: 6, select: false },
-    role: { type: String, enum: ["owner", "admin", "staff"], default: "admin" },
+    role: { type: String, enum: ["owner", "admin", "staff", "business"], default: "admin" },
     is_active: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-// Düzeltilmiş kısım: async fonksiyonlarda next() kullanımına gerek yoktur.
-userSchema.pre("save", async function hashPassword() {
-  if (!this.isModified("password")) return;
-  this.password = await bcrypt.hash(this.password, 10);
-});
+// Pre-save hook removed - passwords must be explicitly hashed before saving
+// to avoid double hashing when using bcrypt.hash explicitly in routes
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
   return bcrypt.compare(candidate, this.password);

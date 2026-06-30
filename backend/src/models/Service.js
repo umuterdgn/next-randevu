@@ -3,15 +3,13 @@ import mongoose from "mongoose";
 const serviceSchema = new mongoose.Schema(
   {
     business_id: { type: String, required: true, index: true },
-    business_ref: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Business",
-      default: null,
-      index: true,
-    },
-    name: { type: String, required: true, trim: true },
-    duration_minutes: { type: Number, required: true, min: 5 },
-    price: { type: Number, default: 0, min: 0 },
+    name: { type: String, required: true },
+    duration: { type: Number, required: true },
+    price: { type: Number, required: false },
+    currency: { type: String, default: "TRY" },
+    description: { type: String, required: false },
+    critical_points: { type: String, required: false },
+    process_steps: { type: String, required: false },
     is_active: { type: Boolean, default: true },
   },
   { timestamps: true }
