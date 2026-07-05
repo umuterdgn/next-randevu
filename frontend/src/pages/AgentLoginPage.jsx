@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../api/client"; // Merkezi API dosyamız eklendi
 
 export default function AgentLoginPage() {
   const [email, setEmail] = useState("");
@@ -14,21 +15,23 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     try {
-const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent/login`, {        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // URL çakışmasını önlemek için doğrudan api.post kullanıyoruz
+      const response = await api.post("/agent/login", { email, password });
+      
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem("agent", JSON.stringify(data.data));
+      if (data.success || response.status === 200) {
+        // Backend'den dönen yapıya göre agent verisini kaydet
+        localStorage.setItem("agent", JSON.stringify(data.data || data.user || data));
+        toast.success("Giriş başarılı!");
         navigate("/agent/dashboard");
       } else {
         toast.error(data.message || "Giriş başarısız");
       }
     } catch (err) {
-      toast.error("Sunucu bağlantı hatası");
+      // Axios hatalarını (401, 404 vb.) doğru şekilde yakalama
+      const errorMessage = err.response?.data?.message || "E-posta veya şifre hatalı!";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
