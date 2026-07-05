@@ -68,6 +68,15 @@ router.post("/whatsapp", async (req, res) => {
     console.log("Telefon:", phoneNumber);
     console.log("Mesaj:", messageText);
 
+    // Dinamik İşletme Tespiti: Meta payload'ından phone_number_id al
+    const incomingPhoneId = value?.metadata?.phone_number_id;
+    console.log("🔍 Gelen Phone Number ID:", incomingPhoneId);
+
+    if (!incomingPhoneId) {
+      console.error("❌ Phone Number ID bulunamadı payload'da");
+      return res.status(200).json({ status: "received" });
+    }
+
     // Clear history if user sends cancel/new topic commands
     const cancelKeywords = ['iptal', 'vazgeçtim', 'sil', 'yeni konu', 'başka şey'];
     const shouldClearHistory = cancelKeywords.some(keyword => 
@@ -79,39 +88,22 @@ router.post("/whatsapp", async (req, res) => {
       console.log("🧹 Kullanıcı geçmişi temizlendi");
     }
 
-    // WhatsApp Cloud API ile cevap gönder
-    const whatsappToken = process.env.WA_TOKEN;
-    const phoneNumberId = process.env.WA_PHONE_NUMBER_ID;
+    // İşletmeyi bul (multi-tenant) - gelen phone_number_id ile
+    const business = await Business.findOne({ whatsapp_phone_number_id: incomingPhoneId });
+    console.log("🏢 İşletme:", business?.name || "Bulunamadı");
 
-    if (!whatsappToken || !phoneNumberId) {
-      console.error("ERROR: WA_TOKEN or WA_PHONE_NUMBER_ID not configured");
+    // Hata Yönetimi: İşletme bulunamazsa sessizce 200 OK dön
+    if (!business) {
+      console.warn("⚠️ İşletme bulunamadı. phone_number_id:", incomingPhoneId, "- Sessizce geçiliyor");
       return res.status(200).json({ status: "received" });
     }
 
-    // İşletmeyi bul (multi-tenant)
-    const business = await Business.findOne({ wa_phone_number_id: phoneNumberId });
-    console.log("🏢 İşletme:", business?.name || "Bulunamadı");
+    // Dinamik Token ve Phone ID kullanımı
+    const whatsappToken = business.whatsapp_token;
+    const phoneNumberId = business.whatsapp_phone_number_id;
 
-    // Fallback: İşletme bulunamazsa sistem çökmesin
-    if (!business) {
-      console.error("❌ İşletme bulunamadı. wa_phone_number_id:", phoneNumberId);
-      const replyText = "Sistemimizde şu an bir bakım çalışması var, lütfen daha sonra tekrar deneyin.";
-
-      await axios.post(
-        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: phoneNumber,
-          text: { body: replyText },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${whatsappToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
+    if (!whatsappToken || !phoneNumberId) {
+      console.error("❌ İşletme WhatsApp bilgileri eksik:", business.name);
       return res.status(200).json({ status: "received" });
     }
 
