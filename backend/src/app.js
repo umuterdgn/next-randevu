@@ -28,16 +28,16 @@ const allowedOrigins = [
   'https://www.tamvaktinde.com.tr',
   'https://nxa.com.tr',
   'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175'
+  'http://localhost:5174'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Eğer origin yoksa (Postman vb.), listede varsa VEYA bir Vercel test linkiyse izin ver
+    if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
       callback(null, true);
     } else {
-      callback(new Error('CORS policy violation'));
+      callback(new Error('CORS policy violation at origin: ' + origin));
     }
   },
   credentials: true
