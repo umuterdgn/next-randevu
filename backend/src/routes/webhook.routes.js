@@ -11,7 +11,7 @@ const router = Router();
  * Meta'nın webhook'u doğrulamak için gönderdiği GET isteğini karşılar
  * Query params: hub.mode, hub.verify_token, hub.challenge
  */
-router.get("/webhook", (req, res) => {
+router.get("/whatsapp", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
@@ -44,7 +44,7 @@ router.get("/webhook", (req, res) => {
  * Meta'dan gelen anlık WhatsApp mesajlarını karşılar
  * Gelen payload'ı konsola loglar
  */
-router.post("/webhook", async (req, res) => {
+router.post("/whatsapp", async (req, res) => {
   console.log('🟢 WHATSAPP WEBHOOK TETİKLENDİ!');
   console.log('🟢 WHATSAPP MESAJI GELDİ:', JSON.stringify(req.body, null, 2));
   try {

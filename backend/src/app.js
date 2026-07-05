@@ -50,7 +50,7 @@ app.use(express.json({ limit: "100kb" }));
 app.use(morgan("dev"));
 
 // Webhook rotasını helmet'ten önce tanımla
-app.use("/api/whatsapp", webhookRoutes);
+app.use("/api/webhook", webhookRoutes);
 
 // Internal S2S routes (no auth, secret key validation in route)
 app.use("/api/internal", internalRoutes);
