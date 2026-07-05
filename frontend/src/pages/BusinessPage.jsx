@@ -222,6 +222,8 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           logo_url: bData.logo_url || "",
           map_url: bData.map_url || "",
           about_text: bData.about_text || "",
+          whatsapp_token: bData.whatsapp_token || "",
+          whatsapp_phone_number_id: bData.whatsapp_phone_number_id || "",
           is_loyalty_enabled: bData.is_loyalty_enabled ?? true,
           bookingSettings: bData.bookingSettings || { bufferTime: 10, maxConcurrent: 1, slotInterval: 30, cancellationBuffer: 120 },
           integrations: bData.integrations || { whatsappEnabled: true, googleCalendar: false, appleCalendar: false }
@@ -448,7 +450,9 @@ const handleSaveSettings = async () => {
         about_text: settings.about_text,
         is_loyalty_enabled: settings.is_loyalty_enabled,
         bookingSettings: settings.bookingSettings,
-        integrations: settings.integrations
+        integrations: settings.integrations,
+        whatsapp_token: settings.whatsapp_token,
+        whatsapp_phone_number_id: settings.whatsapp_phone_number_id
       });
       
       if (response.data.googleAuthUrl) {

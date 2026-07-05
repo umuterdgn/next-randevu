@@ -308,7 +308,7 @@ export const updateBusinessSettingsController = async (req, res) => {
   // Gelen ham veriyi terminalde görmek için bu logu ekle:
   console.log("🔴 FRONTEND'DEN GELEN HAM BODY:", req.body);
 
-  const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations } = req.body;
+  const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations, whatsapp_token, whatsapp_phone_number_id } = req.body;
 
   // Hem about_text hem aboutText ihtimalini yakala:
   const final_about_text = req.body.about_text !== undefined ? req.body.about_text : (req.body.aboutText !== undefined ? req.body.aboutText : "");
@@ -327,7 +327,9 @@ export const updateBusinessSettingsController = async (req, res) => {
     map_url: final_map_url || (existingBusiness?.map_url || ""),
     is_loyalty_enabled,
     bookingSettings,
-    integrations
+    integrations,
+    whatsapp_token: whatsapp_token !== undefined ? whatsapp_token : (existingBusiness?.whatsapp_token || ""),
+    whatsapp_phone_number_id: whatsapp_phone_number_id !== undefined ? whatsapp_phone_number_id : (existingBusiness?.whatsapp_phone_number_id || "")
   };
 
   console.log("📦 VERİTABANINA GÖNDERİLEN NET DATA:", updateData);
