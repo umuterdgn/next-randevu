@@ -27,6 +27,7 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["paid", "unpaid"],
       default: "unpaid",
     },
+    meet_url: { type: String, default: "" },
   },
   { timestamps: true }
 );

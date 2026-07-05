@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, Clock } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/client";
 
 export default function AppLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
+  const [businessData, setBusinessData] = useState(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -17,6 +20,50 @@ export default function AppLayout({ children }) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const fetchBusinessData = async () => {
+      if (user?.role === "business" || user?.role === "business_owner") {
+        try {
+          const response = await api.get("/business/settings");
+          setBusinessData(response.data);
+        } catch (error) {
+          console.error("Business data fetch error:", error);
+        } finally {
+          setLoadingBusiness(false);
+        }
+      } else {
+        setLoadingBusiness(false);
+      }
+    };
+    fetchBusinessData();
+  }, [user]);
+
+  // Show paywall if business is inactive or payment pending
+  if (!loadingBusiness && (user?.role === "business" || user?.role === "business_owner")) {
+    if (businessData && (businessData.is_active === false || businessData.payment_status === "pending")) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 text-center">
+            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Clock className="w-10 h-10 text-amber-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-3">⏳ Ödeme Bekleniyor</h1>
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              Hesabınız başarıyla oluşturuldu ancak henüz aktif değil. Kullanıma başlamak için lütfen ödemenizi tamamlayın.
+              Eğer ödeme yaptıysanız sistem birkaç dakika içinde otomatik olarak açılacaktır. Destek için bayinizle iletişime geçebilirsiniz.
+            </p>
+            <button
+              onClick={logout}
+              className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-medium"
+            >
+              Çıkış Yap
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="min-h-screen md:flex">

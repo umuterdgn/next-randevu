@@ -43,6 +43,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       amount,
       payment_method,
       agent_id,
+      plan,
     } = req.body;
 
     // Verify agent exists
@@ -74,7 +75,11 @@ router.post("/register-business", asyncHandler(async (req, res) => {
 
     const slug = generateSlug(business_name);
 
-    // Create business
+    // Determine business status based on payment method
+    const isCashPayment = payment_method === 'cash';
+    const businessStatus = isCashPayment ? { is_active: true, payment_status: 'paid' } : { is_active: false, payment_status: 'pending' };
+
+    // Create business with plan
     const business = await Business.create({
       business_id: `BIZ-${Date.now()}`,
       name: business_name,
@@ -83,6 +88,9 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       email: owner_email,
       phone: owner_phone,
       theme_color: "#3B82F6",
+      plan: plan || "physical",
+      extraFeatures: {},
+      ...businessStatus,
     });
 
     // Create business user
@@ -99,26 +107,6 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     });
     console.log("DEBUG: User created successfully:", { _id: user._id, email: user.email, role: user.role });
 
-    // Calculate commission
-    const commission_amount = amount * agent.commission_rate;
-
-    // Record NexaFinance
-    let nexaFinance = null;
-    try {
-      nexaFinance = await NexaFinance.create({
-        agent_id: agent._id,
-        business_id: business._id,
-        amount,
-        payment_method,
-        commission_amount,
-        status: "completed",
-      });
-      console.log("DEBUG: NexaFinance record created successfully:", nexaFinance);
-    } catch (financeError) {
-      console.error("ERROR: NexaFinance creation failed:", financeError);
-      // Don't fail the entire registration if finance record fails
-    }
-
     // Send WhatsApp welcome message to business owner
     try {
       const welcomeMessage = `Merhaba ${business_name}, Nexa platformuna hoş geldiniz! Sisteminiz başarıyla kurulmuştur.`;
@@ -128,18 +116,55 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       console.error("WhatsApp message sending failed (non-critical):", whatsappError.message);
     }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        business,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
+    // Handle cash vs credit card payment
+    if (isCashPayment) {
+      // Cash payment: record sale immediately, no payment link
+      const commission_amount = amount * agent.commission_rate;
+      let nexaFinance = null;
+      try {
+        nexaFinance = await NexaFinance.create({
+          agent_id: agent._id,
+          business_id: business._id,
+          amount,
+          payment_method,
+          commission_amount,
+          status: "completed",
+        });
+        console.log("DEBUG: NexaFinance record created successfully:", nexaFinance);
+      } catch (financeError) {
+        console.error("ERROR: NexaFinance creation failed:", financeError);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: "Nakit ödeme alındı, hesap aktifleştirildi.",
+        data: {
+          business,
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+          },
+          nexaFinance,
         },
-        nexaFinance,
-      },
-    });
+      });
+    } else {
+      // Credit card payment: generate payment link, no sale record yet
+      const payment_link = `https://nxa.com.tr/checkout?biz_id=${business._id}&plan=${plan || 'physical'}&agent_id=${agent_id}`;
+
+      res.status(201).json({
+        success: true,
+        data: {
+          business,
+          user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+          },
+          payment_link,
+        },
+      });
+    }
   } catch (error) {
     console.error("Register business error:", error);
     res.status(500).json({ success: false, message: "İşletme kaydı sırasında hata oluştu" });

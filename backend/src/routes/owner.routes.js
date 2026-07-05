@@ -5,6 +5,7 @@ import { requireRole, requireSaasOwner } from "../middleware/auth.js";
 import {
   updateBusinessStatus,
   deleteBusiness,
+  updateBusinessPlan,
 } from "../controllers/owner.controller.js";
 
 const router = Router();
@@ -16,6 +17,7 @@ router.get("/businesses", asyncHandler(listBusinesses));
 router.get("/stats", asyncHandler(stats));
 
 router.patch("/businesses/:id/status", updateBusinessStatus);
+router.patch("/businesses/:id/plan", asyncHandler(updateBusinessPlan));
 router.delete("/businesses/:id", asyncHandler(deleteBusiness));
 
 export default router;

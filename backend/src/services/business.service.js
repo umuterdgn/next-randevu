@@ -66,11 +66,62 @@ export const getDashboardStats = async (business_id) => {
   };
 };
 
-export const getServices = async (business_id) => Service.find({ business_id });
-export const createService = async (business_id, payload) => Service.create({ ...payload, business_id });
+export const getServices = async (business_id) => {
+  const services = await Service.find({
+    $or: [
+      { businessId: business_id },
+      { business: business_id },
+      { business_id: business_id }
+    ]
+  });
+  return services;
+};
+
+export const createService = async (business_id, payload) => {
+  const business = await Business.findOne({
+    $or: [
+      { _id: business_id },
+      { business_id: business_id }
+    ]
+  });
+  if (!business) throw createError("Business not found", 404);
+
+  // Feature gating check for is_online
+  if (payload.is_online === true) {
+    const canUseOnline = business.plan === 'full' || business.plan === 'online' || business.extraFeatures?.onlineUnlocked;
+    if (!canUseOnline) {
+      throw createError("Bu özellik mevcut paketinizde bulunmamaktadır. Lütfen paketinizi yükseltin.", 403);
+    }
+  }
+
+  return Service.create({ ...payload, businessId: business._id, business_id: business.business_id });
+};
 export const updateService = async (business_id, serviceId, payload) => {
+  // Feature gating check for is_online
+  if (payload.is_online === true) {
+    const business = await Business.findOne({
+      $or: [
+        { _id: business_id },
+        { business_id: business_id }
+      ]
+    });
+    if (!business) throw createError("Business not found", 404);
+
+    const canUseOnline = business.plan === 'full' || business.plan === 'online' || business.extraFeatures?.onlineUnlocked;
+    if (!canUseOnline) {
+      throw createError("Bu özellik mevcut paketinizde bulunmamaktadır. Lütfen paketinizi yükseltin.", 403);
+    }
+  }
+
   const service = await Service.findOneAndUpdate(
-    { _id: serviceId, business_id },
+    {
+      _id: serviceId,
+      $or: [
+        { businessId: business_id },
+        { business: business_id },
+        { business_id: business_id }
+      ]
+    },
     { ...payload },
     { new: true, runValidators: true }
   );
@@ -78,7 +129,14 @@ export const updateService = async (business_id, serviceId, payload) => {
   return service;
 };
 export const deleteService = async (business_id, serviceId) => {
-  const service = await Service.findOneAndDelete({ _id: serviceId, business_id });
+  const service = await Service.findOneAndDelete({ 
+    _id: serviceId,
+    $or: [
+      { businessId: business_id },
+      { business: business_id },
+      { business_id: business_id }
+    ]
+  });
   if (!service) throw createError("Service not found", 404);
   return service;
 };
@@ -208,7 +266,11 @@ export const updateRewardThreshold = async (business_id, reward_threshold) => {
 
 export const updateBusinessSettings = async (business_id, settings) => {
   // business_id is ObjectId.toString() from User.business_id, search by _id
-  const business = await Business.findOneAndUpdate({ _id: business_id }, settings, { new: true });
+  const business = await Business.findOneAndUpdate(
+    { _id: business_id },
+    settings,
+    { returnDocument: 'after' }
+  );
   if (!business) throw createError("Business not found", 404);
   return business;
 };

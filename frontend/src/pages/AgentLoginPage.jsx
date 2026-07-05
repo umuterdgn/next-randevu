@@ -94,7 +94,7 @@ export default function AgentLoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <a href="/" className="text-slate-400 hover:text-white text-sm transition-colors">
+            <a href="/login" className="text-slate-400 hover:text-white text-sm transition-colors">
               Ana sayfaya dön
             </a>
           </div>

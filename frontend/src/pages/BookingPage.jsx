@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const BookingPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState(null);
@@ -35,12 +36,17 @@ const BookingPage = () => {
       try {
         setLoading(true);
         setError("");
-        const businessResponse = await fetch(`http://localhost:5000/api/booking/business/${slug}`);
+        const businessResponse = await fetch(`http://localhost:5000/api/booking/business/${slug}`, {
+          cache: 'no-store'
+        });
         const businessData = await businessResponse.json();
 
-        if (businessData.success) {
-          setBusiness(businessData.data.business);
-          setServices(businessData.data.services || []);
+        console.log("Frontend'e gelen veri:", businessData);
+        console.log("Frontend'e gelen servisler:", businessData.services);
+
+        if (businessData.business) {
+          setBusiness(businessData.business);
+          setServices(businessData.services || []);
         } else {
           setError("İşletme bilgileri yüklenirken bir hata oluştu");
         }
@@ -112,6 +118,7 @@ const BookingPage = () => {
       const bookingData = {
         slug,
         serviceId: selectedService._id,
+        is_online: selectedService.is_online || false, // İŞTE EKSİK OLAN SİHİRLİ SATIR
         starts_at: starts_at.toISOString(),
         ends_at: ends_at.toISOString(),
         customer: {
@@ -134,13 +141,19 @@ const BookingPage = () => {
 
       if (data.success) {
         setSuccess(true);
-        // Reset form
-        setStep(1);
-        setSelectedService(null);
-        setSelectedDate("");
-        setSelectedTime("");
-        setFormData({ firstName: "", lastName: "", phone: "", email: "" });
-        setAvailableSlots([]);
+        // Redirect to appointment tracking page
+        const appointmentId = data.appointment?._id || data.data?._id || data.appointmentId;
+        if (appointmentId) {
+          navigate(`/randevu/${appointmentId}`);
+        } else {
+          // Fallback: reset form if no appointment ID
+          setStep(1);
+          setSelectedService(null);
+          setSelectedDate("");
+          setSelectedTime("");
+          setFormData({ firstName: "", lastName: "", phone: "", email: "" });
+          setAvailableSlots([]);
+        }
       } else {
         setError(data.message || "Randevu oluşturulurken bir hata oluştu");
       }
@@ -159,12 +172,24 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
+    <div className="min-h-screen py-8 px-4" style={{ background: `linear-gradient(135deg, ${business?.theme_color || '#3B82F6'}15 0%, ${business?.theme_color || '#3B82F6'}05 100%)` }}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">{business?.name || "Randevu Al"}</h1>
-          <p className="text-slate-600">Size en uygun zamanı seçin</p>
+          {business?.logo_url && (
+            <div className="flex justify-center mb-4">
+              <img
+                src={business.logo_url}
+                alt={`${business.name} Logo`}
+                className="h-24 w-auto object-contain rounded-xl shadow-md border border-white/20"
+                onError={(e) => e.target.style.display = 'none'}
+              />
+            </div>
+          )}
+          <h1 className="text-3xl font-bold text-center my-4 drop-shadow-sm" style={{ color: business?.theme_color || '#3B82F6' }}>
+            {business?.name || "İşletme"}
+          </h1>
+          <p className="text-slate-600 text-lg font-medium">Size en uygun zamanı seçin</p>
         </div>
 
         {/* Progress Steps */}
@@ -172,22 +197,20 @@ const BookingPage = () => {
           {[1, 2, 3].map((s) => (
             <React.Fragment key={s}>
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${
-                  step === s
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 ${step === s
                     ? "text-white scale-110"
                     : step > s
-                    ? "bg-green-500 text-white"
-                    : "bg-slate-200 text-slate-500"
-                }`}
+                      ? "bg-green-500 text-white"
+                      : "bg-slate-200 text-slate-500"
+                  }`}
                 style={step === s ? { backgroundColor: business?.theme_color || "#3B82F6" } : {}}
               >
                 {step > s ? "✓" : s}
               </div>
               {s < 3 && (
                 <div
-                  className={`w-16 h-1 mx-2 transition-all duration-300 ${
-                    step > s ? "bg-green-500" : "bg-slate-200"
-                  }`}
+                  className={`w-16 h-1 mx-2 transition-all duration-300 ${step > s ? "bg-green-500" : "bg-slate-200"
+                    }`}
                 />
               )}
             </React.Fragment>
@@ -233,7 +256,7 @@ const BookingPage = () => {
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <p className="mt-3 text-slate-600">Yükleniyor...</p>
                 </div>
-              ) : services.length === 0 ? (
+              ) : !Array.isArray(services) || services.length === 0 ? (
                 <div className="text-center py-8 text-slate-600">
                   <p>Hizmet bulunamadı</p>
                 </div>
@@ -254,7 +277,7 @@ const BookingPage = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-lg text-slate-800">
-                              {service.price ? `${service.price} ${service.currency}` : "Fiyat Sorunuz"}
+                              {service.price ? `${service.price} ${service.currency || "TL"}` : "Fiyat Sorunuz"}
                             </p>
                           </div>
                         </div>
@@ -302,8 +325,8 @@ const BookingPage = () => {
           {/* Step 2: Date & Time Selection */}
           {step === 2 && (
             <div>
-              <button 
-                onClick={goBack} 
+              <button
+                onClick={goBack}
                 className="mb-4 font-medium transition-colors"
                 style={{ color: business?.theme_color || "#3B82F6" }}
               >
@@ -367,8 +390,8 @@ const BookingPage = () => {
           {/* Step 3: Contact Form */}
           {step === 3 && (
             <div>
-              <button 
-                onClick={goBack} 
+              <button
+                onClick={goBack}
                 className="mb-4 font-medium transition-colors"
                 style={{ color: business?.theme_color || "#3B82F6" }}
               >

@@ -1,5 +1,8 @@
 import { loginUser } from "../services/auth.service.js";
 import { logAudit } from "../services/audit.service.js";
+import { User } from "../models/User.js";
+import crypto from "crypto";
+import { sendEmail } from "../utils/sendEmail.js";
 
 export const login = async (req, res) => {
   try {
@@ -31,9 +34,154 @@ export const login = async (req, res) => {
     });
     
     // Hatanın çözüldüğü nokta: 'throw error' YERİNE frontend'e hata cevabı (response) dönüyoruz!
-    res.status(error.statusCode || 401).json({ 
+    res.status(error.statusCode || 401).json({
+      success: false,
+      message: error.message || "E-posta veya şifre hatalı!"
+    });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    
+    // For security, always return success even if user doesn't exist
+    if (!user) {
+      return res.json({ 
+        success: true, 
+        message: "Eğer bu e-posta adresi sistemimizde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi." 
+      });
+    }
+
+    // Generate reset token using model method
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    // Create HTML email template
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Şifre Sıfırlama - Nexa</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3B82F6;
+            margin-bottom: 20px;
+          }
+          .button {
+            display: inline-block;
+            background-color: #3B82F6;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+          }
+          .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="logo">Nexa</div>
+          <h2>Şifre Sıfırlama Talebi</h2>
+          <p>Nexa hesabınız için şifre sıfırlama talebinde bulundunuz.</p>
+          <p>Aşağıdaki bağlantıya tıklayarak yeni şifrenizi belirleyebilirsiniz.</p>
+          <p>Bu bağlantı 15 dakika süreyle geçerlidir.</p>
+          <a href="${resetUrl}" class="button">Şifremi Sıfırla</a>
+          <p>Eğer bu talebi siz oluşturmadıysanız, bu e-postayı yoksayabilirsiniz.</p>
+          <div class="footer">
+            <p>&copy; 2026 Nexa. Tüm hakları saklıdır.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email using utility function
+    await sendEmail({
+      email: user.email,
+      subject: "Şifre Sıfırlama - Nexa",
+      html: htmlContent,
+    });
+
+    res.json({ 
+      success: true, 
+      message: "Eğer bu e-posta adresi sistemimizde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi." 
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ 
       success: false, 
-      message: error.message || "E-posta veya şifre hatalı!" 
+      message: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin." 
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    // Hash the token from URL to compare with stored token
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid token and not expired
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı."
+      });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Şifreniz başarıyla sıfırlandı. Şimdi giriş yapabilirsiniz."
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin."
     });
   }
 };

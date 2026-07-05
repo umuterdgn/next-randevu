@@ -35,7 +35,7 @@ export default function CariComponent() {
   const loadCustomers = async () => {
     try {
       const response = await api.get("/business/customers");
-      setCustomers(response.data);
+      setCustomers(Array.isArray(response.data) ? response.data : (response.data?.customers || []));
     } catch (error) {
       console.error("Müşteriler yüklenirken hata:", error);
       toast.error(error.response?.data?.message || "Müşteriler yüklenirken hata oluştu.");

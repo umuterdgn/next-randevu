@@ -16,9 +16,32 @@ import financeRoutes from "./routes/finance.routes.js";
 import agentRoutes from "./routes/agent.routes.js";
 import webhookRoutes from "./routes/webhook.routes.js";
 import appointmentRoutes from "./routes/appointment.routes.js";
+import calendarRoutes from "./routes/calendar.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
 
 const app = express();
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://tamvaktinde.com.tr',
+  'https://www.tamvaktinde.com.tr',
+  'https://nxa.com.tr',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy violation'));
+    }
+  },
+  credentials: true
+}));
 
 // Body parser'ı önce tanımla (webhook için gerekli)
 app.use(express.json({ limit: "100kb" }));
@@ -29,6 +52,9 @@ app.use(morgan("dev"));
 // Webhook rotasını helmet'ten önce tanımla
 app.use("/api/whatsapp", webhookRoutes);
 
+// Internal S2S routes (no auth, secret key validation in route)
+app.use("/api/internal", internalRoutes);
+
 app.use(helmet());
 app.use(apiUsageLogger);
 
@@ -37,6 +63,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/calendar", calendarRoutes);
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // KARIŞIK ROTA: Hem public (Başvuru) hem gizli (Onaylama) işlemleri var.
@@ -48,6 +75,7 @@ app.use("/api/owner", requireAuth, ownerRoutes);
 app.use("/api/business", requireAuth, businessRoutes);
 app.use("/api/ai", requireAuth, aiRoutes);
 app.use("/api/business", requireAuth, financeRoutes);
+app.use("/api/payment", requireAuth, paymentRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

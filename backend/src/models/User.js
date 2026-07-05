@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,6 +17,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 6, select: false },
     role: { type: String, enum: ["owner", "admin", "staff", "business"], default: "admin" },
     is_active: { type: Boolean, default: true },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );
@@ -25,6 +28,13 @@ const userSchema = new mongoose.Schema(
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
   return bcrypt.compare(candidate, this.password);
+};
+
+userSchema.methods.getResetPasswordToken = function getResetPasswordToken() {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  return resetToken;
 };
 
 userSchema.index({ business_id: 1, email: 1 }, { unique: true });

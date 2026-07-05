@@ -2,15 +2,17 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 // Sayfaları Import Ediyoruz
+import LandingPage from "./pages/LandingPage";
 import ApplyPage from "./pages/ApplyPage";
 import LoginPage from "./pages/LoginPage";
 import OwnerPage from "./pages/OwnerPage";
 import BusinessPage from "./pages/BusinessPage";
 import BookingPage from "./pages/BookingPage";
 import QuickBookingPage from "./pages/QuickBookingPage";
-import CustomerTrackingPage from "./pages/CustomerTrackingPage";
+import AppointmentTrackingPage from "./pages/AppointmentTrackingPage";
 import AgentLoginPage from "./pages/AgentLoginPage";
 import AgentDashboard from "./pages/AgentDashboard";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Güvenlik Bileşenini Import Ediyoruz
 import Protected from "./components/Protected";
@@ -20,10 +22,11 @@ export default function App() {
     <>
       <Routes>
         {/* Herkese Açık Sayfalar */}
-        <Route path="/" element={<Navigate to="/apply" />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/track/:appointmentId" element={<CustomerTrackingPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/randevu/:id" element={<AppointmentTrackingPage />} />
         <Route path="/agent" element={<AgentLoginPage />} />
         <Route path="/agent/dashboard" element={<AgentDashboard />} />
 

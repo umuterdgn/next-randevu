@@ -27,7 +27,7 @@ export const getApplications = async (_req, res) => {
 };
 
 export const patchApplicationStatus = async (req, res) => {
-  const result = await updateApplicationStatus(req.params.id, req.body.status);
+  const result = await updateApplicationStatus(req.params.id, req.body.status, req.body.plan);
   await logAudit({
     business_id: req.user?.business_id || "saas_root",
     user_id: req.user?._id || null,
@@ -37,7 +37,7 @@ export const patchApplicationStatus = async (req, res) => {
     status_code: 200,
     ip: req.ip || "",
     user_agent: req.headers["user-agent"] || "",
-    meta: { application_id: req.params.id, status: req.body.status },
+    meta: { application_id: req.params.id, status: req.body.status, plan: req.body.plan },
   });
   res.json(result);
 };

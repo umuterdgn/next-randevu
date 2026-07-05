@@ -61,3 +61,30 @@ export const deleteBusiness = async (req, res) => {
     res.status(500).json({ success: false, message: "Sunucu hatası oluştu." });
   }
 };
+
+export const updateBusinessPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan, extraFeatures } = req.body;
+
+    const business = await Business.findByIdAndUpdate(
+      id,
+      { 
+        plan: plan || 'physical',
+        extraFeatures: extraFeatures || {}
+      },
+      { new: true }
+    );
+
+    if (!business) {
+      return res
+        .status(404)
+        .json({ success: false, message: "İşletme bulunamadı." });
+    }
+
+    res.json({ success: true, message: "İşletme planı güncellendi.", data: business });
+  } catch (error) {
+    console.error("İşletme plan güncelleme hatası:", error);
+    res.status(500).json({ success: false, message: "Sunucu hatası oluştu." });
+  }
+};

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Plus, LogOut, TrendingUp, DollarSign, Users } from "lucide-react";
+import { Building2, Plus, LogOut, TrendingUp, DollarSign, Users, Copy, MessageCircle, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function AgentDashboard() {
@@ -10,6 +10,9 @@ export default function AgentDashboard() {
   const [totalCommission, setTotalCommission] = useState(0);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSuccessState, setShowSuccessState] = useState(false);
+  const [paymentLink, setPaymentLink] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState("physical");
   const navigate = useNavigate();
 
   const [registrationForm, setRegistrationForm] = useState({
@@ -20,7 +23,7 @@ export default function AgentDashboard() {
     owner_password: "",
     owner_phone: "",
     amount: "",
-    payment_method: "Nakit",
+    payment_method: "cash",
   });
 
   useEffect(() => {
@@ -59,13 +62,24 @@ export default function AgentDashboard() {
           ...registrationForm,
           amount: parseFloat(registrationForm.amount),
           agent_id: agent._id,
+          plan: selectedPlan,
         }),
       });
 
       const data = await response.json();
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("İşletme başarıyla kaydedildi!");
+        // Check if payment_link exists (credit card) or not (cash)
+        if (data.data.payment_link) {
+          // Credit card payment: show payment link modal
+          setPaymentLink(data.data.payment_link);
+          setShowRegistrationForm(false);
+          setShowSuccessState(true);
+        } else {
+          // Cash payment: show success toast
+          toast.success("✅ Nakit tahsilat yapıldı, işletme hesabı anında aktifleştirildi ve komisyonunuz işlendi!");
+          setShowRegistrationForm(false);
+        }
         setRegistrationForm({
           business_name: "",
           business_sector: "",
@@ -74,9 +88,9 @@ export default function AgentDashboard() {
           owner_password: "",
           owner_phone: "",
           amount: "",
-          payment_method: "Nakit",
+          payment_method: "cash",
         });
-        setShowRegistrationForm(false);
+        setSelectedPlan("physical");
         loadSalesHistory(agent._id);
       } else {
         toast.error(data.message || "Kayıt başarısız");
@@ -329,10 +343,58 @@ export default function AgentDashboard() {
                         setRegistrationForm({ ...registrationForm, payment_method: e.target.value })
                       }
                     >
-                      <option value="Nakit">Nakit</option>
-                      <option value="Kredi Kartı">Kredi Kartı</option>
-                      <option value="IBAN/EFT">IBAN/EFT</option>
+                      <option value="cash">Nakit / Elden / Havale</option>
+                      <option value="credit_card">Kredi Kartı / Online Ödeme</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Package Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">Paket Seçimi</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'physical' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        value="physical"
+                        checked={selectedPlan === 'physical'}
+                        onChange={(e) => setSelectedPlan(e.target.value)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-800">Fiziksel</p>
+                        <p className="text-xs text-slate-600">Sadece fiziksel randevular</p>
+                      </div>
+                    </label>
+                    <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'online' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        value="online"
+                        checked={selectedPlan === 'online'}
+                        onChange={(e) => setSelectedPlan(e.target.value)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-800">Online</p>
+                        <p className="text-xs text-slate-600">Online görüşmeler + Google Meet</p>
+                      </div>
+                    </label>
+                    <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'full' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        value="full"
+                        checked={selectedPlan === 'full'}
+                        onChange={(e) => setSelectedPlan(e.target.value)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <div>
+                        <p className="font-semibold text-slate-800">Full</p>
+                        <p className="text-xs text-slate-600">Tüm özellikler dahil</p>
+                      </div>
+                    </label>
                   </div>
                 </div>
 
@@ -353,6 +415,82 @@ export default function AgentDashboard() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success State - Payment Link */}
+      {showSuccessState && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                </div>
+              </div>
+
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">İşletme Kaydedildi!</h2>
+                <p className="text-slate-600">Ödeme linki başarıyla oluşturuldu. Müşteriye iletin.</p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Güvenli Ödeme Linki</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={paymentLink}
+                    className="input w-full pr-20 bg-slate-50 text-sm"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(paymentLink);
+                      toast.success("Link kopyalandı!");
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Kopyala"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(paymentLink);
+                    toast.success("Link kopyalandı!");
+                  }}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  Linki Kopyala
+                </button>
+                <button
+                  onClick={() => {
+                    const planNames = { physical: 'Fiziksel', online: 'Online', full: 'Full' };
+                    const planName = planNames[selectedPlan] || 'Fiziksel';
+                    const message = `Merhaba, Nexa ${planName} paketiniz için güvenli ödeme linkiniz: ${paymentLink}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  WhatsApp ile Gönder
+                </button>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <button
+                  onClick={() => setShowSuccessState(false)}
+                  className="w-full py-3 px-4 text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  Kapat
+                </button>
+              </div>
             </div>
           </div>
         </div>

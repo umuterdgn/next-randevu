@@ -51,7 +51,9 @@ export default function OwnerPage() {
         ? "agents"
         : location.pathname.includes("sales")
           ? "sales"
-          : "dashboard";
+          : location.pathname.includes("settings")
+            ? "settings"
+            : "dashboard";
 
   const handleTabChange = (tab) => {
     if (tab === "dashboard") navigate("/owner");
@@ -67,6 +69,11 @@ export default function OwnerPage() {
   const [totalCommission, setTotalCommission] = useState(0);
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState("physical");
 
   const [agentForm, setAgentForm] = useState({
     name: "",
@@ -74,6 +81,19 @@ export default function OwnerPage() {
     password: "",
     phone: "",
     commission_rate: 0.1,
+  });
+
+  const [settings, setSettings] = useState({
+    bookingSettings: {
+      bufferTime: 10,
+      maxConcurrent: 1,
+      slotInterval: 30
+    },
+    integrations: {
+      whatsappEnabled: true,
+      googleCalendar: false,
+      appleCalendar: false
+    }
   });
 
   const load = async () => {
@@ -154,6 +174,15 @@ export default function OwnerPage() {
       toast.error("Sunucu bağlantı hatası");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      await api.put("/business/settings", settings);
+      toast.success("Ayarlar başarıyla kaydedildi!");
+    } catch (error) {
+      toast.error("Ayarlar kaydedilirken hata oluştu");
     }
   };
 
@@ -280,6 +309,12 @@ export default function OwnerPage() {
             </span>
           )}
         </button>
+        <button
+          className={`pb-3 text-sm font-medium transition-colors ${activeTab === "settings" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-slate-500 hover:text-slate-800"}`}
+          onClick={() => handleTabChange("settings")}
+        >
+          Ayarlar
+        </button>
       </div>
 
       {activeTab === "dashboard" && (
@@ -404,12 +439,12 @@ export default function OwnerPage() {
 
       {activeTab === "applications" && (
         <div className="animate-in fade-in duration-300 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {apps.length === 0 ? (
+          {!Array.isArray(apps) || apps.length === 0 ? (
             <p className="col-span-full text-center text-slate-500 py-10">
               Kayıtlı başvuru bulunmuyor.
             </p>
           ) : (
-            apps.map((a) => (
+            Array.isArray(apps) && apps.map((a) => (
               <div
                 key={a._id}
                 className="card flex flex-col justify-between hover:border-indigo-200 transition"
@@ -446,15 +481,10 @@ export default function OwnerPage() {
                   <div className="flex gap-2 border-t border-slate-100 pt-4">
                     <button
                       className="btn-primary flex-1 py-2 text-sm font-medium"
-                      onClick={async () => {
-                        try {
-                          await api.patch(`/applications/${a._id}/status`, {
-                            status: "approved",
-                          });
-                          load();
-                        } catch (err) {
-                          toast.error("Onaylanırken hata oluştu.");
-                        }
+                      onClick={() => {
+                        setSelectedApplication(a);
+                        setSelectedPlan("physical");
+                        setShowApproveModal(true);
                       }}
                     >
                       Onayla & Hesap Aç
@@ -490,12 +520,12 @@ export default function OwnerPage() {
 
       {activeTab === "businesses" && (
         <div className="animate-in fade-in duration-300 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {businesses.length === 0 ? (
+          {!Array.isArray(businesses) || businesses.length === 0 ? (
             <p className="col-span-full text-center text-slate-500 py-10">
               Sistemde kayıtlı işletme bulunmuyor.
             </p>
           ) : (
-            businesses.map((b) => (
+            Array.isArray(businesses) && businesses.map((b) => (
               <div
                 key={b._id}
                 className="card flex flex-col justify-between hover:border-indigo-200 transition"
@@ -505,11 +535,24 @@ export default function OwnerPage() {
                     <h3 className="font-bold text-lg text-slate-800">
                       {b.name}
                     </h3>
-                    <span
-                      className={`badge ${b.is_active !== false ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
-                    >
-                      {b.is_active !== false ? "Aktif" : "Pasif (Donduruldu)"}
-                    </span>
+                    <div className="flex gap-2">
+                      <span
+                        className={`badge ${b.is_active !== false ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+                      >
+                        {b.is_active !== false ? "Aktif" : "Pasif (Donduruldu)"}
+                      </span>
+                      <span
+                        className={`badge ${
+                          b.plan === 'full' 
+                            ? 'bg-purple-100 text-purple-700' 
+                            : b.plan === 'online' 
+                              ? 'bg-blue-100 text-blue-700' 
+                              : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {b.plan === 'full' ? 'Full' : b.plan === 'online' ? 'Online' : 'Fiziksel'}
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-1 mb-4 text-sm text-slate-600">
                     <p className="flex items-center gap-2">
@@ -547,6 +590,16 @@ export default function OwnerPage() {
                     {b.is_active !== false
                       ? "Dondur (Pasife Al)"
                       : "Aktifleştir"}
+                  </button>
+                  <button
+                    className="btn flex-1 bg-blue-100 text-blue-700 hover:bg-blue-200 py-2 text-sm font-medium flex items-center justify-center gap-2"
+                    onClick={() => {
+                      setSelectedBusiness(b);
+                      setSelectedPlan(b.plan || 'physical');
+                      setShowPlanModal(true);
+                    }}
+                  >
+                    Paketi Güncelle
                   </button>
                   <button
                     className="btn flex-1 bg-rose-100 text-rose-700 hover:bg-rose-200 py-2 text-sm font-medium flex items-center justify-center gap-2"
@@ -635,7 +688,7 @@ export default function OwnerPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {sales.map((sale) => (
+                  {Array.isArray(sales) && sales.map((sale) => (
                     <tr key={sale._id} className="hover:bg-slate-50">
                       <td className="px-6 py-4 text-sm text-slate-600">
                         {new Date(sale.createdAt).toLocaleDateString("tr-TR")}
@@ -706,7 +759,7 @@ export default function OwnerPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {agents.map((agent) => (
+                  {Array.isArray(agents) && agents.map((agent) => (
                     <tr key={agent._id} className="hover:bg-slate-50">
                       <td className="px-6 py-4 text-sm font-medium text-slate-800">
                         {agent.name}
@@ -742,6 +795,148 @@ export default function OwnerPage() {
               {agents.length === 0 && (
                 <div className="p-8 text-center text-slate-500">Henüz bayi yok.</div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "settings" && (
+        <div className="animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">İşletme Ayarları</h2>
+            
+            {/* Booking Settings */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-blue-600" />
+                Randevu Ayarları
+              </h3>
+              <div className="grid gap-6 md:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Randevular Arası Boşluk (Dakika)
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.bookingSettings.bufferTime}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      bookingSettings: { ...settings.bookingSettings, bufferTime: Number(e.target.value) }
+                    })}
+                    className="input w-full"
+                    min="0"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Randevular arası minimum bekleme süresi</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Aynı Anda Max Randevu
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.bookingSettings.maxConcurrent}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      bookingSettings: { ...settings.bookingSettings, maxConcurrent: Number(e.target.value) }
+                    })}
+                    className="input w-full"
+                    min="1"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Aynı saatte alınabilecek max randevu sayısı</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Saat Aralığı (Dakika)
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.bookingSettings.slotInterval}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      bookingSettings: { ...settings.bookingSettings, slotInterval: Number(e.target.value) }
+                    })}
+                    className="input w-full"
+                    min="5"
+                    step="5"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Takvimde saatlerin kaçar dakika arayla bölüneceği</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Integration Settings */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" />
+                Entegrasyon Ayarları
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-800">WhatsApp Entegrasyonu</p>
+                    <p className="text-sm text-slate-600">Müşterilere WhatsApp üzerinden bildirim gönder</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.integrations.whatsappEnabled}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        integrations: { ...settings.integrations, whatsappEnabled: e.target.checked }
+                      })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-800">Google Calendar</p>
+                    <p className="text-sm text-slate-600">Randevuları Google Calendar ile senkronize et</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.integrations.googleCalendar}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        integrations: { ...settings.integrations, googleCalendar: e.target.checked }
+                      })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-800">Apple Calendar</p>
+                    <p className="text-sm text-slate-600">Randevuları Apple Calendar ile senkronize et</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.integrations.appleCalendar}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        integrations: { ...settings.integrations, appleCalendar: e.target.checked }
+                      })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveSettings}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Power className="w-4 h-4" />
+                Ayarları Kaydet
+              </button>
             </div>
           </div>
         </div>
@@ -837,6 +1032,205 @@ export default function OwnerPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Application Modal */}
+      {showApproveModal && selectedApplication && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Başvuruyu Onayla</h2>
+                <button
+                  onClick={() => setShowApproveModal(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-sm text-slate-600 mb-2">İşletme Adı:</p>
+                <p className="text-lg font-semibold text-slate-800">{selectedApplication.business_name}</p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-3">Paket Seçimi</label>
+                <div className="space-y-3">
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'physical' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="physical"
+                      checked={selectedPlan === 'physical'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Fiziksel</p>
+                      <p className="text-xs text-slate-600">Sadece fiziksel randevular</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'online' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="online"
+                      checked={selectedPlan === 'online'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Online</p>
+                      <p className="text-xs text-slate-600">Online görüşmeler + Google Meet</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'full' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="full"
+                      checked={selectedPlan === 'full'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Full</p>
+                      <p className="text-xs text-slate-600">Tüm özellikler dahil</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowApproveModal(false)}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.patch(`/applications/${selectedApplication._id}/status`, {
+                        status: "approved",
+                        plan: selectedPlan,
+                      });
+                      setShowApproveModal(false);
+                      load();
+                      toast.success("Başvuru onaylandı ve hesap açıldı!");
+                    } catch (err) {
+                      toast.error("Onaylanırken hata oluştu.");
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                >
+                  Onayla
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Plan Modal */}
+      {showPlanModal && selectedBusiness && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Paketi Güncelle</h2>
+                <button
+                  onClick={() => setShowPlanModal(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-sm text-slate-600 mb-2">İşletme Adı:</p>
+                <p className="text-lg font-semibold text-slate-800">{selectedBusiness.name}</p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-3">Yeni Paket</label>
+                <div className="space-y-3">
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'physical' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="physical"
+                      checked={selectedPlan === 'physical'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Fiziksel</p>
+                      <p className="text-xs text-slate-600">Sadece fiziksel randevular</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'online' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="online"
+                      checked={selectedPlan === 'online'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Online</p>
+                      <p className="text-xs text-slate-600">Online görüşmeler + Google Meet</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedPlan === 'full' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="full"
+                      checked={selectedPlan === 'full'}
+                      onChange={(e) => setSelectedPlan(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-800">Full</p>
+                      <p className="text-xs text-slate-600">Tüm özellikler dahil</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPlanModal(false)}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.patch(`/owner/businesses/${selectedBusiness._id}/plan`, {
+                        plan: selectedPlan,
+                      });
+                      setShowPlanModal(false);
+                      load();
+                      toast.success("Paket başarıyla güncellendi!");
+                    } catch (err) {
+                      toast.error("Paket güncellenirken hata oluştu.");
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                >
+                  Güncelle
+                </button>
+              </div>
             </div>
           </div>
         </div>

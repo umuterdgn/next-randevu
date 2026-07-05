@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 const serviceSchema = new mongoose.Schema(
   {
-    business_id: { type: String, required: true, index: true },
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: "Business", required: false, index: true },
+    business_id: { type: String, required: false },
     name: { type: String, required: true },
     duration: { type: Number, required: true },
     price: { type: Number, required: false },
@@ -11,6 +12,7 @@ const serviceSchema = new mongoose.Schema(
     critical_points: { type: String, required: false },
     process_steps: { type: String, required: false },
     is_active: { type: Boolean, default: true },
+    is_online: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -59,7 +59,7 @@ export const submitApplication = async (payload) => Application.create(payload);
 
 export const listApplications = async () => Application.find().sort({ createdAt: -1 });
 
-export const updateApplicationStatus = async (applicationId, status) => {
+export const updateApplicationStatus = async (applicationId, status, plan = "physical") => {
   const app = await Application.findById(applicationId);
   if (!app) throw createError("Application not found", 404);
 
@@ -82,6 +82,8 @@ export const updateApplicationStatus = async (applicationId, status) => {
       email: app.email,
       sector: app.sector,
       city: app.city || "",
+      plan: plan,
+      extraFeatures: {},
     });
   }
 

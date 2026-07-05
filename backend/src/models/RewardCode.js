@@ -11,6 +11,8 @@ const rewardCodeSchema = new mongoose.Schema(
     },
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
     code: { type: String, required: true },
+    discount_amount: { type: Number, default: 20 },
+    is_used: { type: Boolean, default: false },
     used_at: { type: Date, default: null },
   },
   { timestamps: true }

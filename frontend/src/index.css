@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-nxa-50: #f8f9fa;
+  --color-nxa-100: #e9ecef;
+  --color-nxa-200: #dee2e6;
+  --color-nxa-300: #ced4da;
+  --color-nxa-400: #adb5bd;
+  --color-nxa-500: #6c757d;
+  --color-nxa-600: #495057;
+  --color-nxa-700: #343a40;
+  --color-nxa-800: #212529;
+  --color-nxa-900: #0d0d0d;
+  --color-nxa-950: #000000;
+}
+
 body {
   @apply bg-slate-100 text-slate-800 antialiased;
 }
