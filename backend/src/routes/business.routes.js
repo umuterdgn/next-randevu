@@ -19,6 +19,7 @@ import {
   deleteStaff,
   redeemReward,
   uploadLogo,
+  createBusinessFromUser,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -40,6 +41,11 @@ import { Business } from "../models/Business.js";
 import { Appointment } from "../models/Appointment.js";
 
 const router = Router();
+
+// Route for creating business from SSO user (before tenant middleware)
+router.post("/create-from-user", requireAuth, asyncHandler(createBusinessFromUser));
+
+// All other routes require tenant
 router.use(requireAuth, requireRole("admin", "staff", "business", "owner", "business_owner", "superadmin"), requireTenant);
 
 router.get("/dashboard", asyncHandler(dashboard));

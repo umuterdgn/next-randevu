@@ -213,7 +213,7 @@ export const ssoLogin = async (req, res) => {
     // Verify SSO token from nxa.com.tr
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.SSO_SECRET || process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.SSO_SECRET_KEY || process.env.JWT_SECRET);
     } catch (error) {
       console.error("SSO token verification failed:", error);
       return res.status(401).json({
@@ -234,30 +234,8 @@ export const ssoLogin = async (req, res) => {
     // Check if Business exists with this email
     let business = await Business.findOne({ email });
 
-    // If Business doesn't exist, create it automatically
-    if (!business) {
-      const businessId = crypto.randomBytes(16).toString('hex');
-      const slug = name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
-
-      business = await Business.create({
-        business_id: businessId,
-        slug: slug,
-        name: name || 'Yeni İşletme',
-        sector: 'Diğer',
-        phone: phone || '',
-        email: email,
-        city: '',
-        address: '',
-        about_text: '',
-        theme_color: '#3B82F6',
-        is_active: true
-      });
-
-      console.log("Auto-created Business for SSO:", business.email);
-    }
-
-    // Check if User exists for this business
-    let user = await User.findOne({ business_id: business.business_id, email });
+    // Check if User exists with this email (for any business)
+    let user = await User.findOne({ email });
 
     // If User doesn't exist, create it automatically
     if (!user) {
@@ -265,9 +243,10 @@ export const ssoLogin = async (req, res) => {
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
+      // Create user without business_id initially (will be set after Business creation)
       user = await User.create({
-        business_id: business.business_id,
-        business_ref: business._id,
+        business_id: 'pending', // Temporary business_id
+        business_ref: null,
         name: name || 'İşletme Sahibi',
         email: email,
         phone: phone || '',
@@ -319,10 +298,15 @@ export const ssoLogin = async (req, res) => {
 
     user.password = undefined;
 
+    // Determine redirect based on Business existence
+    const redirectPath = business ? '/business' : '/apply';
+
     res.json({
       success: true,
       user,
-      token: appToken
+      token: appToken,
+      redirect: redirectPath,
+      hasBusiness: !!business
     });
   } catch (error) {
     console.error("SSO login error:", error);

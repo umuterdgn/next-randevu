@@ -17,6 +17,7 @@ import SSOPage from "./pages/SSOPage";
 
 // Güvenlik Bileşenini Import Ediyoruz
 import Protected from "./components/Protected";
+import ApplyProtected from "./components/ApplyProtected";
 
 export default function App() {
   return (
@@ -24,7 +25,11 @@ export default function App() {
       <Routes>
         {/* Herkese Açık Sayfalar */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/apply" element={<ApplyPage />} />
+        <Route path="/apply" element={
+          <ApplyProtected>
+            <ApplyPage />
+          </ApplyProtected>
+        } />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/sso" element={<SSOPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

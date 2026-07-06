@@ -25,8 +25,9 @@ export default function SSOPage() {
           // Store auth data using the auth context
           login(response.data.user, response.data.token);
 
-          // Redirect to business dashboard
-          navigate("/business");
+          // Redirect based on Business existence
+          const redirectPath = response.data.redirect || '/business';
+          navigate(redirectPath);
         } else {
           console.error("SSO login failed:", response.data.message);
           navigate("/login");

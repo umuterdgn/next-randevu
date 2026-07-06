@@ -21,6 +21,8 @@ import { Cari } from "../models/Cari.js";
 import { Transaction } from "../models/Transaction.js";
 import { Service } from "../models/Service.js";
 import { Staff } from "../models/Staff.js";
+import { User } from "../models/User.js";
+import crypto from "crypto";
 
 export const dashboard = async (req, res) => {
   const data = await getDashboardStats(req.business_id);
@@ -515,5 +517,74 @@ export const uploadLogo = async (req, res) => {
   } catch (error) {
     console.error("Logo yükleme controller hatası:", error);
     res.status(500).json({ success: false, message: "Sunucu hatası oluştu." });
+  }
+};
+
+export const createBusinessFromUser = async (req, res) => {
+  try {
+    const { business_name, phone, email, sector, city } = req.body;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Yetkisiz işlem" });
+    }
+
+    // Get the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Kullanıcı bulunamadı" });
+    }
+
+    // Check if user already has a business
+    if (user.business_id && user.business_id !== 'pending') {
+      return res.status(400).json({ success: false, message: "Kullanıcı zaten bir işletmeye sahip" });
+    }
+
+    // Generate business_id and slug
+    const businessId = crypto.randomBytes(16).toString('hex');
+    const slug = business_name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
+
+    // Create Business
+    const business = await Business.create({
+      business_id: businessId,
+      slug: slug,
+      name: business_name,
+      sector: sector || 'Diğer',
+      phone: phone || user.phone || '',
+      email: email || user.email,
+      city: city || '',
+      address: '',
+      about_text: '',
+      theme_color: '#3B82F6',
+      is_active: true
+    });
+
+    // Update User with new business_id
+    user.business_id = business.business_id;
+    user.business_ref = business._id;
+    await user.save();
+
+    // Log audit
+    await logAudit({
+      business_id: business.business_id,
+      user_id: user._id,
+      action: "BUSINESS_CREATED_FROM_SSO",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 201,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+    });
+
+    user.password = undefined;
+
+    res.status(201).json({
+      success: true,
+      user,
+      business
+    });
+  } catch (error) {
+    console.error("Create business from user error:", error);
+    res.status(500).json({ success: false, message: "İşletme oluşturulurken bir hata oluştu" });
   }
 };
