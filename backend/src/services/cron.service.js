@@ -24,13 +24,19 @@ export const startCronJobs = () => {
         starts_at: { $gte: fortyMinutesLater, $lte: fortyOneMinutesLater },
         status: { $in: ['confirmed', 'pending'] },
         reminder_sent: { $ne: true } // Only send if reminder not already sent
-      }).populate('business_id');
+      });
 
       console.log(`📊 ${appointments.length} randevu için hatırlatıcı gönderilecek.`);
 
       for (const appointment of appointments) {
         try {
-          const business = appointment.business_id;
+          // Manually fetch business to avoid ObjectId casting issues
+          const business = await Business.findOne({
+            $or: [
+              { _id: appointment.business_id },
+              { business_id: appointment.business_id }
+            ]
+          });
           if (!business) continue;
 
           // Format phone number

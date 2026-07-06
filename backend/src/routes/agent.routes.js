@@ -214,16 +214,35 @@ router.post("/register-business", asyncHandler(async (req, res) => {
 router.get("/sales/:agentId", asyncHandler(async (req, res) => {
   const sales = await NexaFinance.find({ agent_id: req.params.agentId })
     .populate("agent_id", "name email")
-    .populate("business_id", "name sector")
     .sort({ createdAt: -1 });
-  
+
+  // Manually fetch business details to avoid ObjectId casting issues
+  const businessIds = [...new Set(sales.map(s => s.business_id).filter(Boolean))];
+  const businesses = await Business.find({
+    $or: [
+      { _id: { $in: businessIds } },
+      { business_id: { $in: businessIds } }
+    ]
+  });
+
+  const businessMap = new Map();
+  businesses.forEach(b => {
+    businessMap.set(b._id.toString(), b);
+    businessMap.set(b.business_id, b);
+  });
+
+  const salesWithBusiness = sales.map(sale => ({
+    ...sale.toObject(),
+    business: businessMap.get(sale.business_id) || { name: 'Unknown', sector: 'Unknown' }
+  }));
+
   const totalSales = sales.reduce((sum, sale) => sum + sale.amount, 0);
   const totalCommission = sales.reduce((sum, sale) => sum + sale.commission_amount, 0);
 
   res.json({
     success: true,
     data: {
-      sales,
+      sales: salesWithBusiness,
       totalSales,
       totalCommission,
     },
@@ -235,8 +254,27 @@ router.get("/admin/all-sales", asyncHandler(async (req, res) => {
   try {
     const sales = await NexaFinance.find()
       .populate("agent_id", "name email phone")
-      .populate("business_id", "name sector")
       .sort({ createdAt: -1 });
+
+    // Manually fetch business details to avoid ObjectId casting issues
+    const businessIds = [...new Set(sales.map(s => s.business_id).filter(Boolean))];
+    const businesses = await Business.find({
+      $or: [
+        { _id: { $in: businessIds } },
+        { business_id: { $in: businessIds } }
+      ]
+    });
+
+    const businessMap = new Map();
+    businesses.forEach(b => {
+      businessMap.set(b._id.toString(), b);
+      businessMap.set(b.business_id, b);
+    });
+
+    const salesWithBusiness = sales.map(sale => ({
+      ...sale.toObject(),
+      business: businessMap.get(sale.business_id) || { name: 'Unknown', sector: 'Unknown' }
+    }));
 
     console.log("DEBUG: Sales from database:", sales);
     console.log("DEBUG: Sales count:", sales.length);

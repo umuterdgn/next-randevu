@@ -8,8 +8,7 @@ const nexaFinanceSchema = new mongoose.Schema(
       required: true,
     },
     business_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Business",
+      type: String, // Changed from ObjectId to String to avoid casting issues
       required: true,
     },
     amount: {

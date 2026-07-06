@@ -288,9 +288,9 @@ export const updateRewardThreshold = async (business_id, reward_threshold) => {
 };
 
 export const updateBusinessSettings = async (business_id, settings) => {
-  // business_id is ObjectId.toString() from User.business_id, search by _id
+  // business_id can be ObjectId.toString() or string business_id, search both
   const business = await Business.findOneAndUpdate(
-    { _id: business_id },
+    { $or: [{ _id: business_id }, { business_id: business_id }] },
     settings,
     { returnDocument: 'after' }
   );
