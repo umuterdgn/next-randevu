@@ -9,22 +9,37 @@ export const AuthProvider = ({ children }) => {
     return raw ? JSON.parse(raw) : null;
   });
 
-  const login = async (email, password) => {
+  const login = async (emailOrUser, passwordOrToken) => {
     try {
-      // API'ye istek atıyoruz
-      const { data } = await api.post("/auth/login", { email, password });
-      
-      // Başarılı olursa token ve user bilgilerini kaydediyoruz
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
-      
+      // Check if first argument is a user object (SSO case) or email string (normal login)
+      if (typeof emailOrUser === 'object' && emailOrUser !== null) {
+        // SSO login - user object and token provided directly
+        const user = emailOrUser;
+        const token = passwordOrToken;
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        setUser(user);
+      } else {
+        // Normal login - email and password provided
+        const email = emailOrUser;
+        const password = passwordOrToken;
+
+        // API'ye istek atıyoruz
+        const { data } = await api.post("/auth/login", { email, password });
+
+        // Başarılı olursa token ve user bilgilerini kaydediyoruz
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+      }
+
     } catch (error) {
       // Hata oluşursa konsola yazdır (geliştirme aşamasında görmek için)
       console.error("Giriş işlemi başarısız:", error.response?.data || error.message);
-      
+
       // Hatayı Login (App.jsx) bileşenine fırlat ki orada kullanıcıya uyarı gösterebilelim
-      throw error; 
+      throw error;
     }
   };
 

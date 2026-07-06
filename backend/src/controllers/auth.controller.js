@@ -1,8 +1,11 @@
 import { loginUser } from "../services/auth.service.js";
 import { logAudit } from "../services/audit.service.js";
 import { User } from "../models/User.js";
+import { Business } from "../models/Business.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 export const login = async (req, res) => {
   try {
@@ -192,6 +195,140 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+    });
+  }
+};
+
+export const ssoLogin = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "SSO token gerekli"
+      });
+    }
+
+    // Verify SSO token from nxa.com.tr
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.SSO_SECRET || process.env.JWT_SECRET);
+    } catch (error) {
+      console.error("SSO token verification failed:", error);
+      return res.status(401).json({
+        success: false,
+        message: "Geçersiz veya süresi dolmuş SSO token"
+      });
+    }
+
+    const { email, name, phone } = decoded;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Token içinde e-posta bulunamadı"
+      });
+    }
+
+    // Check if Business exists with this email
+    let business = await Business.findOne({ email });
+
+    // If Business doesn't exist, create it automatically
+    if (!business) {
+      const businessId = crypto.randomBytes(16).toString('hex');
+      const slug = name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
+
+      business = await Business.create({
+        business_id: businessId,
+        slug: slug,
+        name: name || 'Yeni İşletme',
+        sector: 'Diğer',
+        phone: phone || '',
+        email: email,
+        city: '',
+        address: '',
+        about_text: '',
+        theme_color: '#3B82F6',
+        is_active: true
+      });
+
+      console.log("Auto-created Business for SSO:", business.email);
+    }
+
+    // Check if User exists for this business
+    let user = await User.findOne({ business_id: business.business_id, email });
+
+    // If User doesn't exist, create it automatically
+    if (!user) {
+      // Generate random secure password
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await User.create({
+        business_id: business.business_id,
+        business_ref: business._id,
+        name: name || 'İşletme Sahibi',
+        email: email,
+        phone: phone || '',
+        password: hashedPassword,
+        role: 'owner',
+        is_active: true
+      });
+
+      console.log("Auto-created User for SSO:", user.email);
+    }
+
+    // Generate JWT token for this application
+    const tokenPayload = {
+      id: user._id,
+      role: user.role,
+      business_id: user.business_id,
+    };
+
+    const appToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+        issuer: process.env.JWT_ISSUER || "saas-appointments",
+        audience: process.env.JWT_AUDIENCE || "saas-appointments-client",
+        algorithm: "HS256",
+      }
+    );
+
+    // Set cookie
+    res.cookie('token', appToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Gün
+    });
+
+    // Log audit
+    await logAudit({
+      business_id: user.business_id,
+      user_id: user._id,
+      action: "SSO_LOGIN_SUCCESS",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+    });
+
+    user.password = undefined;
+
+    res.json({
+      success: true,
+      user,
+      token: appToken
+    });
+  } catch (error) {
+    console.error("SSO login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "SSO girişi sırasında bir hata oluştu"
     });
   }
 };

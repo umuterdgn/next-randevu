@@ -13,6 +13,7 @@ import AppointmentTrackingPage from "./pages/AppointmentTrackingPage";
 import AgentLoginPage from "./pages/AgentLoginPage";
 import AgentDashboard from "./pages/AgentDashboard";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SSOPage from "./pages/SSOPage";
 
 // Güvenlik Bileşenini Import Ediyoruz
 import Protected from "./components/Protected";
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/sso" element={<SSOPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/randevu/:id" element={<AppointmentTrackingPage />} />
         <Route path="/agent" element={<AgentLoginPage />} />
