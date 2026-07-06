@@ -4,13 +4,23 @@ import { Business } from "../models/Business.js";
 import mongoose from "mongoose";
 
 export const listBusinesses = async (_req, res) => {
-  const businesses = await getAllBusinesses();
-  res.json(businesses);
+  try {
+    const businesses = await getAllBusinesses();
+    res.json(businesses);
+  } catch (error) {
+    console.error("Owner API Error - listBusinesses:", error.message, error.stack);
+    res.status(500).json({ success: false, message: "İşletmeler çekilirken hata oluştu." });
+  }
 };
 
 export const stats = async (_req, res) => {
-  const result = await getOwnerStats();
-  res.json(result);
+  try {
+    const result = await getOwnerStats();
+    res.json(result);
+  } catch (error) {
+    console.error("Owner API Error - stats:", error.message, error.stack);
+    res.status(500).json({ success: false, message: "İstatistikler çekilirken hata oluştu." });
+  }
 };
 // DİKKAT: En üstte User modelinin import edildiğinden emin ol
 // import { User } from "../models/User.js";
