@@ -6,6 +6,13 @@ import { Service } from "../models/Service.js";
 import { createError } from "../utils/appError.js";
 
 export const getDashboardStats = async (business_id) => {
+  // Check if business_id is 'pending' (SSO user without business)
+  if (!business_id || business_id === 'pending') {
+    const error = createError("İşletme bulunamadı. Lütfen işletmenizi oluşturun.", 404);
+    error.require_apply = true;
+    throw error;
+  }
+
   const now = new Date();
   const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -18,6 +25,13 @@ export const getDashboardStats = async (business_id) => {
       { business_id: business_id }
     ]
   });
+
+  // If business not found, user needs to create one
+  if (!business) {
+    const error = createError("İşletme bulunamadı. Lütfen işletmenizi oluşturun.", 404);
+    error.require_apply = true;
+    throw error;
+  }
 
   const [total, grouped, daily, monthly, topServices, retentionData, appointmentTrend] = await Promise.all([
     Appointment.countDocuments({ business_id }),

@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
     is_active: { type: Boolean, default: true },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    sso_plan_type: { type: String, default: "physical" }, // Store plan type from SSO
   },
   { timestamps: true }
 );

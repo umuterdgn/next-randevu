@@ -231,7 +231,7 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           integrations: bData.integrations || { whatsappEnabled: true, googleCalendar: false, appleCalendar: false },
           auto_approve_appointments: bData.auto_approve_appointments ?? true
         }));
-        
+
         // Also update dash state with fallbacks including plan and extraFeatures
         setDash(prev => ({
           ...prev,
@@ -240,13 +240,13 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           plan: bData.plan || "physical",
           extraFeatures: bData.extraFeatures || {}
         }));
-        
+
         // Sembolü ve sayıyı doğru çek:
         setLoyaltySettings({
           threshold: bData.reward_threshold || 10,
           symbol: bData.loyalty_symbol || "⭐"
         });
-        
+
         // AI kredilerini çek
         setCreditsRemaining(bData.ai_campaign_credits || 5);
       }
@@ -259,7 +259,12 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
         }
       }
     } catch (error) {
-      console.error("Veriler yüklenirken hata:", error);
+      console.error("Load error:", error);
+      // Check if error requires business creation
+      if (error.response?.data?.require_apply || error.response?.status === 404) {
+        navigate("/apply");
+        return;
+      }
       toast.error(error.response?.data?.message || "Veriler yüklenirken hata oluştu.");
     }
   };

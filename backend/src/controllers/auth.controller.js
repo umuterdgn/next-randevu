@@ -222,7 +222,7 @@ export const ssoLogin = async (req, res) => {
       });
     }
 
-    const { email, name, phone } = decoded;
+    const { email, name, phone, planType } = decoded;
 
     if (!email) {
       return res.status(400).json({
@@ -252,10 +252,17 @@ export const ssoLogin = async (req, res) => {
         phone: phone || '',
         password: hashedPassword,
         role: 'owner',
-        is_active: true
+        is_active: true,
+        sso_plan_type: planType || 'physical' // Store plan type from SSO
       });
 
       console.log("Auto-created User for SSO:", user.email);
+    } else {
+      // Update existing user with plan type if provided
+      if (planType && !user.sso_plan_type) {
+        user.sso_plan_type = planType;
+        await user.save();
+      }
     }
 
     // Generate JWT token for this application

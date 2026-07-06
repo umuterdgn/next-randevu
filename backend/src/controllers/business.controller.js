@@ -540,9 +540,21 @@ export const createBusinessFromUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Kullanıcı zaten bir işletmeye sahip" });
     }
 
+    // Get plan type from SSO or default to 'physical'
+    const planType = user.sso_plan_type || 'physical';
+
     // Generate business_id and slug
     const businessId = crypto.randomBytes(16).toString('hex');
     const slug = business_name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
+
+    // Set extra features based on plan type
+    let extraFeatures = {};
+    if (planType === 'online' || planType === 'full') {
+      extraFeatures.onlineUnlocked = true;
+    }
+    if (planType === 'full') {
+      extraFeatures.physicalUnlocked = true;
+    }
 
     // Create Business
     const business = await Business.create({
@@ -556,7 +568,9 @@ export const createBusinessFromUser = async (req, res) => {
       address: '',
       about_text: '',
       theme_color: '#3B82F6',
-      is_active: true
+      is_active: true,
+      plan: planType,
+      extraFeatures: extraFeatures
     });
 
     // Update User with new business_id
