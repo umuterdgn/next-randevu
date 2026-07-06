@@ -16,16 +16,19 @@ export default function AgentLoginPage() {
 
     try {
       const response = await api.post("/agent/login", { email, password });
+      const data = response.data;
 
-      if (response.data.success) {
-        localStorage.setItem("agent", JSON.stringify(response.data.data));
+      if (data.success || response.status === 200) {
+        localStorage.setItem("agent", JSON.stringify(data.data || data.user || data));
         localStorage.setItem("token", response.data.data.token);
+        toast.success("Giriş başarılı!");
         navigate("/agent/dashboard");
       } else {
         toast.error(response.data.message || "Giriş başarısız");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Sunucu bağlantı hatası");
+      const errorMessage = err.response?.data?.message || "E-posta veya şifre hatalı!";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

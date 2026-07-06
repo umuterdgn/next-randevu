@@ -10,7 +10,6 @@ export const login = async (req, res) => {
 
     await logAudit({
       business_id: result.user.business_id,
-      // Mongoose'da ID genelde _id olarak döner, bu yüzden .id yoksa ._id alsın diye garantiye alıyoruz
       user_id: result.user._id || result.user.id,
       action: "LOGIN_SUCCESS",
       method: req.method,
@@ -20,13 +19,17 @@ export const login = async (req, res) => {
       user_agent: req.headers["user-agent"] || "",
     });
 
-    // Set cross-domain cookie for production
-    res.cookie('token', result.token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    // --- EKLENEN HAYATİ KISIM (COOKIE AYARI) ---
+    // Eğer login başarılıysa ve token döndüyse, bunu güvenli çerez olarak tarayıcıya ver
+    if (result.token) {
+      res.cookie('token', result.token, {
+        httpOnly: true,       // XSS saldırılarına karşı koruma
+        secure: true,         // Vercel (HTTPS) canlı ortamı için zorunlu
+        sameSite: 'none',     // Farklı Vercel domainleri arası iletişime izin verir
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Gün
+      });
+    }
+    // -------------------------------------------
 
     res.json(result);
   } catch (error) {
@@ -41,7 +44,6 @@ export const login = async (req, res) => {
       meta: { email: req.body?.email || "" },
     });
 
-    // Hatanın çözüldüğü nokta: 'throw error' YERİNE frontend'e hata cevabı (response) dönüyoruz!
     res.status(error.statusCode || 401).json({
       success: false,
       message: error.message || "E-posta veya şifre hatalı!"

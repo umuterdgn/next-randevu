@@ -1,59 +1,52 @@
 import { User } from "../models/User.js";
 import { Agent } from "../models/Agent.js";
 import { createError } from "../utils/appError.js";
-// DÜZELTME 1: jsonwebtoken yerine kendi yazdığımız güvenli fonksiyonu çağırıyoruz.
-// (Eğer jwt.js dosyan utils klasöründe değilse buradaki yolu projene göre ../utils/jwt.js olarak ayarla)
 import { signToken } from "../utils/jwt.js";
 import bcrypt from "bcryptjs";
 
+// 1. Normal Kullanıcı (Owner / Business) Girişi
 export const loginUser = async ({ email, password }) => {
-  // DİKKAT: .select("+password") kısmı çok önemli! Şifreyi karşılaştırmak için gizliliği geçici kaldırıyoruz.
   const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
-  // Şifreler eşleşiyor mu kontrol et
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
-  // DÜZELTME 2: jwt.sign YERİNE signToken KULLANIYORUZ!
-  // Artık token oluşturulurken içine otomatik olarak issuer ve audience damgaları vurulacak.
   const token = signToken({
     id: user._id,
     role: user.role,
     business_id: user.business_id,
   });
 
-  // Gönderirken şifreyi objeden çıkar ki frontend'e gitmesin
   user.password = undefined;
 
   return { user, token };
 };
 
+// 2. Bayi (Agent) Girişi
 export const loginAgent = async ({ email, password }) => {
-  const agent = await Agent.findOne({ email, is_active: true });
+  const agent = await Agent.findOne({ email, is_active: true }).select("+password");
 
   if (!agent) {
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
-  // Şifreler eşleşiyor mu kontrol et
   const isMatch = await bcrypt.compare(password, agent.password);
   if (!isMatch) {
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
-  // Token oluştur ve role: 'agent' ekle
   const token = signToken({
     id: agent._id,
-    role: 'agent',
+    role: "agent",
+    business_id: agent.business_id || null,
   });
 
-  // Gönderirken şifreyi objeden çıkar ki frontend'e gitmesin
   agent.password = undefined;
 
   return { user: agent, token };
