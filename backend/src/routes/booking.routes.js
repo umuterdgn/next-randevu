@@ -261,66 +261,81 @@ router.post("/book", asyncHandler(async (req, res) => {
 
 /**
  * GET /track/:appointmentId
- * Randevu detaylarını döndür (DÜZELTİLMİŞ POPULATE VE VİTRİN BİLGİSİ)
+ * Randevu detaylarını döndür (MANUEL FETCH - POPULATE YOK)
  */
 router.get("/track/:appointmentId", asyncHandler(async (req, res) => {
-  const { appointmentId } = req.params;
+  try {
+    const { appointmentId } = req.params;
 
-  // Sadece referansı kesin olanları populate ediyoruz
-  const appointment = await Appointment.findById(appointmentId)
-    .populate("service_id")
-    .populate("customer_id");
+    // Önce randevuyu bul (populate olmadan)
+    const appointment = await Appointment.findById(appointmentId);
 
-  if (!appointment) {
-    return res.status(404).json({ success: false, message: "Randevu bulunamadı" });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Randevu bulunamadı" });
+    }
+
+    // İşletmeyi manuel bul
+    const business = await Business.findOne({
+      $or: [
+        { _id: appointment.business_id },
+        { business_id: appointment.business_id }
+      ]
+    });
+
+    // Hizmeti manuel bul
+    let service = null;
+    if (appointment.service_id) {
+      service = await Service.findById(appointment.service_id);
+    }
+
+    // Müşteriyi manuel bul
+    let customer = null;
+    if (appointment.customer_id) {
+      customer = await Customer.findById(appointment.customer_id);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        appointment: {
+          id: appointment._id,
+          starts_at: appointment.starts_at,
+          ends_at: appointment.ends_at,
+          status: appointment.status,
+          business_id: appointment.business_id,
+          meet_url: appointment.meet_url || "",
+        },
+        service: service ? {
+          id: service._id,
+          name: service.name,
+          duration: service.duration_minutes || service.duration,
+          price: service.price,
+        } : null,
+        business: {
+          name: business?.name || "İşletme",
+          phone: business?.phone || "",
+          slug: business?.slug || "",
+          theme_color: business?.theme_color || "",
+          reward_threshold: business?.reward_threshold || 10,
+          bookingSettings: business?.bookingSettings || { cancellationBuffer: 120 },
+          address: business?.address || "",
+          map_url: business?.map_url || "",
+          about_text: business?.about_text || "",
+          logo_url: business?.logo_url || "",
+          is_loyalty_enabled: business?.is_loyalty_enabled !== false
+        },
+        customer: customer ? {
+          _id: customer._id,
+          name: customer.name,
+          phone: customer.phone,
+          loyalty_points: customer.loyalty_points || 0,
+        } : null,
+      },
+    });
+  } catch (error) {
+    console.error("Track appointment error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
-
-  // 🔥 İki farklı ID sorununu çözen o hassas sorgu (Mongoose ID veya Auth String ID)
-  const business = await Business.findOne({
-    $or: [
-      { _id: appointment.business_id },
-      { business_id: appointment.business_id }
-    ]
-  });
-
-  res.json({
-    success: true,
-    data: {
-      appointment: {
-        id: appointment._id,
-        starts_at: appointment.starts_at,
-        ends_at: appointment.ends_at,
-        status: appointment.status,
-        business_id: appointment.business_id,
-        meet_url: appointment.meet_url || "",
-      },
-      service: {
-        id: appointment.service_id?._id,
-        name: appointment.service_id?.name,
-        duration: appointment.service_id?.duration_minutes || appointment.service_id?.duration,
-        price: appointment.service_id?.price,
-      },
-      business: {
-        name: business?.name || "İşletme",
-        phone: business?.phone || "",
-        slug: business?.slug || "",
-        theme_color: business?.theme_color || "",
-        reward_threshold: business?.reward_threshold || 10,
-        bookingSettings: business?.bookingSettings || { cancellationBuffer: 120 },
-        address: business?.address || "",
-        map_url: business?.map_url || "",
-        about_text: business?.about_text || "",
-        logo_url: business?.logo_url || "",
-        is_loyalty_enabled: business?.is_loyalty_enabled !== false
-      },
-      customer: {
-        _id: appointment.customer_id?._id,
-        name: appointment.customer_id?.name,
-        phone: appointment.customer_id?.phone,
-        loyalty_points: appointment.customer_id?.loyalty_points || 0,
-      },
-    },
-  });
 }));
 
 /**
