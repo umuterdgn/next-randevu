@@ -45,6 +45,8 @@ router.post("/login", asyncHandler(async (req, res) => {
 // Agent register new business
 router.post("/register-business", asyncHandler(async (req, res) => {
   try {
+    console.log("DEBUG: Register business request received:", req.body);
+
     const {
       business_name,
       business_sector,
@@ -58,11 +60,26 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       plan,
     } = req.body;
 
+    console.log("DEBUG: Extracted fields:", {
+      business_name,
+      business_sector,
+      owner_name,
+      owner_email,
+      owner_password: owner_password ? "****" : "MISSING",
+      owner_phone,
+      amount,
+      payment_method,
+      agent_id,
+      plan
+    });
+
     // Verify agent exists
     const agent = await Agent.findById(agent_id);
     if (!agent) {
+      console.error("ERROR: Agent not found:", agent_id);
       return res.status(404).json({ success: false, message: "Bayi bulunamadı" });
     }
+    console.log("DEBUG: Agent found:", agent._id);
 
     // Generate URL-friendly slug from business name
     const generateSlug = (name) => {
@@ -86,6 +103,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     };
 
     const slug = generateSlug(business_name);
+    console.log("DEBUG: Generated slug:", slug);
 
     // Determine business status based on payment method
     const isCashPayment = payment_method === 'cash';
@@ -105,11 +123,14 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       agency_id: agent._id, // Link business to the agent
       ...businessStatus,
     });
+    console.log("DEBUG: Business created successfully:", { _id: business._id, business_id: business.business_id, name: business.name });
 
     // Create business user
     // IMPORTANT: Role must be "business" for agent-created businesses (Super Admin is "owner")
     // Hash password explicitly with bcrypt
     const hashedPassword = await bcrypt.hash(owner_password, 10);
+    console.log("DEBUG: Password hashed successfully");
+
     const user = await User.create({
       business_id: business.business_id, // Use string business_id, not ObjectId
       business_ref: business._id, // Also store ObjectId reference
@@ -119,7 +140,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       phone: owner_phone,
       role: "business",
     });
-    console.log("DEBUG: User created successfully:", { _id: user._id, email: user.email, role: user.role });
+    console.log("DEBUG: User created successfully:", { _id: user._id, email: user.email, role: user.role, business_id: user.business_id });
 
     // Send WhatsApp welcome message to business owner
     try {
@@ -134,6 +155,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     if (isCashPayment) {
       // Cash payment: record sale immediately, no payment link
       const commission_amount = amount * agent.commission_rate;
+      console.log("DEBUG: Calculating commission:", { amount, commission_rate: agent.commission_rate, commission_amount });
       let nexaFinance = null;
       try {
         nexaFinance = await NexaFinance.create({
@@ -149,6 +171,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
         console.error("ERROR: NexaFinance creation failed:", financeError);
       }
 
+      console.log("DEBUG: Sending cash payment success response");
       res.status(201).json({
         success: true,
         message: "Nakit ödeme alındı, hesap aktifleştirildi.",
@@ -165,7 +188,9 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     } else {
       // Credit card payment: generate payment link, no sale record yet
       const payment_link = `https://tamvaktinde.com.tr/checkout?biz_id=${business._id}&plan=${plan || 'physical'}&agent_id=${agent_id}`;
+      console.log("DEBUG: Generated payment link:", payment_link);
 
+      console.log("DEBUG: Sending credit card payment response");
       res.status(201).json({
         success: true,
         data: {
@@ -187,24 +212,27 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       stack: error.stack,
       errors: error.errors
     });
-    
+
     // Handle specific error cases
     if (error.code === 11000) {
       // Duplicate key error
       const field = Object.keys(error.keyPattern || {})[0] || 'bilinmeyen alan';
-      return res.status(400).json({ 
-        success: false, 
-        message: `Bu ${field} zaten kullanımda. Lütfen farklı bir değer deneyin.` 
+      console.error("ERROR: Duplicate key error for field:", field);
+      return res.status(400).json({
+        success: false,
+        message: `Bu ${field} zaten kullanımda. Lütfen farklı bir değer deneyin.`
       });
     }
-    
+
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Doğrulama hatası: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}` 
+      console.error("ERROR: Validation error:", error.errors);
+      return res.status(400).json({
+        success: false,
+        message: `Doğrulama hatası: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}`
       });
     }
-    
+
+    console.error("ERROR: Unknown error occurred:", error);
     res.status(500).json({ 
       success: false, 
       message: `İşletme kaydı sırasında hata oluştu: ${error.message}` 

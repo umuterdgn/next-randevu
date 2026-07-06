@@ -9,6 +9,7 @@ export default function AgentDashboard() {
   const [sales, setSales] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalCommission, setTotalCommission] = useState(0);
+  const [businesses, setBusinesses] = useState([]);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessState, setShowSuccessState] = useState(false);
@@ -33,8 +34,10 @@ export default function AgentDashboard() {
       navigate("/agent");
       return;
     }
-    setAgent(JSON.parse(agentData));
-    loadSalesHistory(JSON.parse(agentData)._id);
+    const parsedAgent = JSON.parse(agentData);
+    setAgent(parsedAgent);
+    loadSalesHistory(parsedAgent._id);
+    loadAgentBusinesses(parsedAgent._id);
   }, [navigate]);
 
   const loadSalesHistory = async (agentId) => {
@@ -47,6 +50,17 @@ export default function AgentDashboard() {
       }
     } catch (error) {
       console.error("Satış geçmişi yüklenirken hata:", error);
+    }
+  };
+
+  const loadAgentBusinesses = async (agentId) => {
+    try {
+      const response = await api.get(`/agent/${agentId}/businesses`);
+      if (response.data.success) {
+        setBusinesses(response.data.data);
+      }
+    } catch (error) {
+      console.error("Bayi işletmeleri yüklenirken hata:", error);
     }
   };
 
@@ -86,10 +100,12 @@ export default function AgentDashboard() {
         });
         setSelectedPlan("physical");
         loadSalesHistory(agent._id);
+        loadAgentBusinesses(agent._id);
       } else {
         toast.error(response.data.message || "Kayıt başarısız");
       }
     } catch (error) {
+      console.error("Registration error:", error);
       toast.error(error.response?.data?.message || "Sunucu bağlantı hatası");
     } finally {
       setLoading(false);
@@ -149,7 +165,7 @@ export default function AgentDashboard() {
               <Users className="w-6 h-6 text-purple-600" />
               <span className="text-slate-600 font-semibold">Kayıtlı İşletme</span>
             </div>
-            <p className="text-3xl font-bold text-slate-800">{sales.length}</p>
+            <p className="text-3xl font-bold text-slate-800">{businesses.length}</p>
           </div>
         </div>
 
