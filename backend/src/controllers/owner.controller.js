@@ -1,7 +1,7 @@
 import { getAllBusinesses, getOwnerStats } from "../services/owner.service.js";
 import { User } from "../models/User.js";
-import { Business } from "../models/Business.js"; // (Eğer dosya adın Business ise)
-// (Eğer User modelin farklı bir klasördeyse yolu ona göre düzenle)
+import { Business } from "../models/Business.js";
+import mongoose from "mongoose";
 
 export const listBusinesses = async (_req, res) => {
   const businesses = await getAllBusinesses();
@@ -20,9 +20,10 @@ export const updateBusinessStatus = async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
 
-    // Use findOne with $or to handle both ObjectId and string business_id
+    // Check if id is valid ObjectId or string business_id
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { business_id: id };
     const business = await Business.findOneAndUpdate(
-      { $or: [{ _id: id }, { business_id: id }] },
+      query,
       { is_active },
       { new: true },
     );
@@ -44,10 +45,9 @@ export const deleteBusiness = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Use findOneAndDelete with $or to handle both ObjectId and string business_id
-    const business = await Business.findOneAndDelete(
-      { $or: [{ _id: id }, { business_id: id }] }
-    );
+    // Check if id is valid ObjectId or string business_id
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { business_id: id };
+    const business = await Business.findOneAndDelete(query);
 
     if (!business) {
       return res
@@ -69,9 +69,10 @@ export const updateBusinessPlan = async (req, res) => {
     const { id } = req.params;
     const { plan, extraFeatures } = req.body;
 
-    // Use findOneAndUpdate with $or to handle both ObjectId and string business_id
+    // Check if id is valid ObjectId or string business_id
+    const query = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { business_id: id };
     const business = await Business.findOneAndUpdate(
-      { $or: [{ _id: id }, { business_id: id }] },
+      query,
       {
         plan: plan || 'physical',
         extraFeatures: extraFeatures || {}
