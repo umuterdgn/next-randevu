@@ -20,9 +20,9 @@ export const updateBusinessStatus = async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
 
-    // İŞTE BURASI ÇOK ÖNEMLİ: User değil Business olmalı!
-    const business = await Business.findByIdAndUpdate(
-      id,
+    // Use findOne with $or to handle both ObjectId and string business_id
+    const business = await Business.findOneAndUpdate(
+      { $or: [{ _id: id }, { business_id: id }] },
       { is_active },
       { new: true },
     );
@@ -44,8 +44,10 @@ export const deleteBusiness = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // İşletmeyi veritabanından tamamen sil
-    const business = await Business.findByIdAndDelete(id);
+    // Use findOneAndDelete with $or to handle both ObjectId and string business_id
+    const business = await Business.findOneAndDelete(
+      { $or: [{ _id: id }, { business_id: id }] }
+    );
 
     if (!business) {
       return res
@@ -67,9 +69,10 @@ export const updateBusinessPlan = async (req, res) => {
     const { id } = req.params;
     const { plan, extraFeatures } = req.body;
 
-    const business = await Business.findByIdAndUpdate(
-      id,
-      { 
+    // Use findOneAndUpdate with $or to handle both ObjectId and string business_id
+    const business = await Business.findOneAndUpdate(
+      { $or: [{ _id: id }, { business_id: id }] },
+      {
         plan: plan || 'physical',
         extraFeatures: extraFeatures || {}
       },
