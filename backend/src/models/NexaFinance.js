@@ -17,7 +17,7 @@ const nexaFinanceSchema = new mongoose.Schema(
     },
     payment_method: {
       type: String,
-      enum: ["Nakit", "Kredi Kartı", "IBAN/EFT"],
+      enum: ["Nakit", "Kredi Kartı", "IBAN/EFT", "cash", "credit_card"],
       default: "Nakit",
     },
     commission_amount: {

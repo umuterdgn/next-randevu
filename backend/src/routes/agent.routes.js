@@ -138,7 +138,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       email: owner_email,
       password: hashedPassword,
       phone: owner_phone,
-      role: "business",
+      role: "business_admin", // Use business_admin role for agent-created businesses
     });
     console.log("DEBUG: User created successfully:", { _id: user._id, email: user.email, role: user.role, business_id: user.business_id });
 
@@ -156,13 +156,22 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       // Cash payment: record sale immediately, no payment link
       const commission_amount = amount * agent.commission_rate;
       console.log("DEBUG: Calculating commission:", { amount, commission_rate: agent.commission_rate, commission_amount });
+
+      // Map payment_method to Turkish enum values
+      const paymentMethodMap = {
+        'cash': 'Nakit',
+        'credit_card': 'Kredi Kartı',
+        'iban': 'IBAN/EFT'
+      };
+      const mappedPaymentMethod = paymentMethodMap[payment_method] || 'Nakit';
+
       let nexaFinance = null;
       try {
         nexaFinance = await NexaFinance.create({
           agent_id: agent._id,
           business_id: business.business_id, // Use string business_id
           amount,
-          payment_method,
+          payment_method: mappedPaymentMethod,
           commission_amount,
           status: "completed",
         });
