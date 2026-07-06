@@ -23,6 +23,7 @@ const businessSchema = new mongoose.Schema(
     whatsapp_token: { type: String, default: "" },
     whatsapp_phone_number_id: { type: String, default: "" },
     wa_phone_number_id: { type: String, trim: true },
+    agency_id: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null, index: true },
 
     workingHours: {
       monday: {

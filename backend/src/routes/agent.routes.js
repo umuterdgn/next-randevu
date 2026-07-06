@@ -91,7 +91,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     const isCashPayment = payment_method === 'cash';
     const businessStatus = isCashPayment ? { is_active: true, payment_status: 'paid' } : { is_active: false, payment_status: 'pending' };
 
-    // Create business with plan
+    // Create business with plan and agency_id
     const business = await Business.create({
       business_id: `BIZ-${Date.now()}`,
       name: business_name,
@@ -102,6 +102,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       theme_color: "#3B82F6",
       plan: plan || "physical",
       extraFeatures: {},
+      agency_id: agent._id, // Link business to the agent
       ...businessStatus,
     });
 
@@ -110,7 +111,8 @@ router.post("/register-business", asyncHandler(async (req, res) => {
     // Hash password explicitly with bcrypt
     const hashedPassword = await bcrypt.hash(owner_password, 10);
     const user = await User.create({
-      business_id: business._id,
+      business_id: business.business_id, // Use string business_id, not ObjectId
+      business_ref: business._id, // Also store ObjectId reference
       name: owner_name,
       email: owner_email,
       password: hashedPassword,
@@ -136,7 +138,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       try {
         nexaFinance = await NexaFinance.create({
           agent_id: agent._id,
-          business_id: business._id,
+          business_id: business.business_id, // Use string business_id
           amount,
           payment_method,
           commission_amount,
@@ -359,6 +361,33 @@ router.delete("/admin/agents/:id", asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("Delete agent error:", error);
     res.status(500).json({ success: false, message: "Bayi silme sırasında hata oluştu" });
+  }
+}));
+
+// Get agent's businesses
+router.get("/:agentId/businesses", asyncHandler(async (req, res) => {
+  try {
+    const { agentId } = req.params;
+
+    // Verify agent exists
+    const agent = await Agent.findById(agentId);
+    if (!agent) {
+      return res.status(404).json({ success: false, message: "Bayi bulunamadı" });
+    }
+
+    // Get all businesses linked to this agent
+    const businesses = await Business.find({ agency_id: agentId })
+      .select("-google_calendar_tokens -whatsapp_token -whatsapp_phone_number_id")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: businesses,
+      count: businesses.length
+    });
+  } catch (error) {
+    console.error("Get agent businesses error:", error);
+    res.status(500).json({ success: false, message: "Bayi işletmeleri çekilirken hata oluştu" });
   }
 }));
 
