@@ -11,6 +11,14 @@ export const getDashboardStats = async (business_id) => {
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+  // Get business info to include slug in response
+  const business = await Business.findOne({
+    $or: [
+      { _id: business_id },
+      { business_id: business_id }
+    ]
+  });
+
   const [total, grouped, daily, monthly, topServices, retentionData, appointmentTrend] = await Promise.all([
     Appointment.countDocuments({ business_id }),
     Appointment.aggregate([{ $match: { business_id } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
@@ -63,6 +71,7 @@ export const getDashboardStats = async (business_id) => {
     most_used_services: topServices,
     customer_retention_rate: Number(retention.toFixed(2)),
     appointment_trend: appointmentTrend,
+    slug: business?.slug || "",
   };
 };
 

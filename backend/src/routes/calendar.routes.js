@@ -143,16 +143,26 @@ router.get("/appointment/:id/download.ics", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get appointment with business and service info
+    // Get appointment with service info only (business will be queried manually)
     const appointment = await Appointment.findById(id)
-      .populate("business_id")
       .populate("service_id");
 
     if (!appointment) {
       return res.status(404).send("Appointment not found");
     }
 
-    const business = appointment.business_id;
+    // Manually query business to avoid Cast to ObjectId error with business_id string
+    const business = await Business.findOne({
+      $or: [
+        { _id: appointment.business_id },
+        { business_id: appointment.business_id }
+      ]
+    });
+
+    if (!business) {
+      return res.status(404).send("Business not found");
+    }
+
     const service = appointment.service_id;
 
     const startDate = new Date(appointment.date);
