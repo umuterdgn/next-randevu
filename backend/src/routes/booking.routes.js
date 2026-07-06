@@ -136,6 +136,9 @@ router.post("/book", asyncHandler(async (req, res) => {
 
   let appointment;
   try {
+    // Check if business has auto-approve enabled
+    const appointmentStatus = business.auto_approve_appointments !== false ? "approved" : "pending";
+
     appointment = await Appointment.create({
       business_id: business._id.toString(),
       customer_id: existingCustomer._id,
@@ -143,7 +146,7 @@ router.post("/book", asyncHandler(async (req, res) => {
       service_id: serviceId,
       starts_at: startDate,
       ends_at: endDate,
-      status: "pending",
+      status: appointmentStatus,
     });
   } catch (error) {
     console.error("Appointment creation error:", error);
@@ -153,13 +156,31 @@ router.post("/book", asyncHandler(async (req, res) => {
   try {
     const dateStr = startDate.toISOString().split('T')[0];
     const timeStr = startDate.toTimeString().substring(0, 5);
-    await sendWhatsAppNotification(
-      customer.phone,
-      appointment._id.toString(),
-      business.name || 'İşletme',
-      dateStr,
-      timeStr
-    );
+
+    // Send WhatsApp notification based on appointment status
+    if (appointment.status === "approved") {
+      const approvedMsg = `Merhaba ${customer.firstName} ${customer.lastName}, ${business.name} işletmesinden ${dateStr} - ${timeStr} için randevunuz başarıyla oluşturulmuş ve onaylanmıştır. Bizi tercih ettiğiniz için teşekkür ederiz.\n\nDetaylar, iptal ve takvim için tıklayın: https://tamvaktinde.com.tr/randevu/${appointment._id}`;
+      await sendWhatsAppNotification(
+        customer.phone,
+        appointment._id.toString(),
+        business.name || 'İşletme',
+        dateStr,
+        timeStr,
+        business,
+        approvedMsg
+      );
+    } else {
+      const pendingMsg = `Merhaba ${customer.firstName} ${customer.lastName}, ${business.name} işletmesinden ${dateStr} - ${timeStr} için randevu talebiniz alınmıştır. İşletme onayladığında size tekrar bilgi verilecektir.\n\nDetaylar, iptal ve takvim için tıklayın: https://tamvaktinde.com.tr/randevu/${appointment._id}`;
+      await sendWhatsAppNotification(
+        customer.phone,
+        appointment._id.toString(),
+        business.name || 'İşletme',
+        dateStr,
+        timeStr,
+        business,
+        pendingMsg
+      );
+    }
   } catch (err) {
     console.error("WhatsApp bildirim hatası:", err);
   }

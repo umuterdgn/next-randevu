@@ -74,6 +74,7 @@ const businessSchema = new mongoose.Schema(
       slotInterval: { type: Number, default: 30 },
       cancellationBuffer: { type: Number, default: 120 }
     },
+    auto_approve_appointments: { type: Boolean, default: true },
     integrations: {
       whatsappEnabled: { type: Boolean, default: true },
       googleCalendar: { type: Boolean, default: false },

@@ -308,7 +308,7 @@ export const updateBusinessSettingsController = async (req, res) => {
   // Gelen ham veriyi terminalde görmek için bu logu ekle:
   console.log("🔴 FRONTEND'DEN GELEN HAM BODY:", req.body);
 
-  const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations, whatsapp_token, whatsapp_phone_number_id } = req.body;
+  const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations, whatsapp_token, whatsapp_phone_number_id, auto_approve_appointments } = req.body;
 
   // Hem about_text hem aboutText ihtimalini yakala:
   const final_about_text = req.body.about_text !== undefined ? req.body.about_text : (req.body.aboutText !== undefined ? req.body.aboutText : "");
@@ -329,7 +329,8 @@ export const updateBusinessSettingsController = async (req, res) => {
     bookingSettings,
     integrations,
     whatsapp_token: whatsapp_token !== undefined ? whatsapp_token : (existingBusiness?.whatsapp_token || ""),
-    whatsapp_phone_number_id: whatsapp_phone_number_id !== undefined ? whatsapp_phone_number_id : (existingBusiness?.whatsapp_phone_number_id || "")
+    whatsapp_phone_number_id: whatsapp_phone_number_id !== undefined ? whatsapp_phone_number_id : (existingBusiness?.whatsapp_phone_number_id || ""),
+    auto_approve_appointments: auto_approve_appointments !== undefined ? auto_approve_appointments : (existingBusiness?.auto_approve_appointments ?? true)
   };
 
   console.log("📦 VERİTABANINA GÖNDERİLEN NET DATA:", updateData);

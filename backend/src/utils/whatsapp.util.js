@@ -2,7 +2,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const sendWhatsAppNotification = async (phone, appointmentId, businessName, date, time, business = null) => {
+export const sendWhatsAppNotification = async (phone, appointmentId, businessName, date, time, business = null, customMessage = null) => {
   try {
     console.log("📞 WHATSAPP BİLDİRİM BAŞLATILIYOR...");
     console.log("Orijinal telefon:", phone);
@@ -31,7 +31,8 @@ export const sendWhatsAppNotification = async (phone, appointmentId, businessNam
     console.log("WA Token mevcut mu:", tokenToUse ? "Evet" : "Hayır");
     console.log("WA Phone Number ID:", phoneIdToUse);
 
-    const msg = `Merhaba! 📅 ${businessName} işletmesindeki randevunuz ${date} saat ${time} için onaylanmıştır.\n\nDetaylar, iptal ve takvim için tıklayın: https://tamvaktinde.com.tr/randevu/${appointmentId}`;
+    // Use custom message if provided, otherwise use default
+    const msg = customMessage || `Merhaba! 📅 ${businessName} işletmesindeki randevunuz ${date} saat ${time} için onaylanmıştır.\n\nDetaylar, iptal ve takvim için tıklayın: https://tamvaktinde.com.tr/randevu/${appointmentId}`;
 
     console.log("Mesaj içeriği:", msg);
 

@@ -153,7 +153,8 @@ export default function BusinessPage() {
       whatsappEnabled: true,
       googleCalendar: false,
       appleCalendar: false
-    }
+    },
+    auto_approve_appointments: true
   });
 
   // Block Time Modal State
@@ -227,7 +228,8 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           whatsapp_phone_number_id: bData.whatsapp_phone_number_id || "",
           is_loyalty_enabled: bData.is_loyalty_enabled ?? true,
           bookingSettings: bData.bookingSettings || { bufferTime: 10, maxConcurrent: 1, slotInterval: 30, cancellationBuffer: 120 },
-          integrations: bData.integrations || { whatsappEnabled: true, googleCalendar: false, appleCalendar: false }
+          integrations: bData.integrations || { whatsappEnabled: true, googleCalendar: false, appleCalendar: false },
+          auto_approve_appointments: bData.auto_approve_appointments ?? true
         }));
         
         // Also update dash state with fallbacks including plan and extraFeatures
@@ -453,7 +455,8 @@ const handleSaveSettings = async () => {
         bookingSettings: settings.bookingSettings,
         integrations: settings.integrations,
         whatsapp_token: settings.whatsapp_token,
-        whatsapp_phone_number_id: settings.whatsapp_phone_number_id
+        whatsapp_phone_number_id: settings.whatsapp_phone_number_id,
+        auto_approve_appointments: settings.auto_approve_appointments
       });
       
       if (response.data.googleAuthUrl) {
@@ -1809,6 +1812,22 @@ const handleSaveSettings = async () => {
                   />
                   <p className="text-xs text-slate-500 mt-1">Randevu öncesi kaç dakikaya kadar iptal edilebilir</p>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div>
+                  <p className="font-bold text-blue-900">Otomatik Randevu Onayı</p>
+                  <p className="text-sm text-blue-700">Müşteriler web üzerinden randevu aldığında otomatik olarak onaylanır. Kapatırsanız randevular 'Bekliyor' statüsünde düşer ve manuel onaylamanız gerekir.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.auto_approve_appointments ?? true}
+                    onChange={(e) => setSettings(prev => ({ ...prev, auto_approve_appointments: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-blue-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
               </div>
             </div>
 
