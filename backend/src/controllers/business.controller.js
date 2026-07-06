@@ -137,7 +137,12 @@ export const addAppointment = async (req, res) => {
     const { sendWhatsAppNotification } = await import('../utils/whatsapp.util.js');
 
     const customer = await Customer.findById(req.body.customer_id);
-    const business = await Business.findById(req.business_id);
+    const business = await Business.findOne({
+      $or: [
+        { _id: req.business_id },
+        { business_id: req.business_id }
+      ]
+    });
 
     if (customer?.phone && business) {
       const appointmentDate = new Date(data.date).toLocaleDateString('tr-TR');

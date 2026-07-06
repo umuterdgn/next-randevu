@@ -6,8 +6,13 @@ export const activateAccount = async (req, res) => {
   try {
     const { business_id, plan, amount, payment_method, agent_id, type, credits_amount } = req.body;
 
-    // Find business
-    const business = await Business.findById(business_id);
+    // Find business - use findOne to handle string business_id
+    const business = await Business.findOne({
+      $or: [
+        { _id: business_id },
+        { business_id: business_id }
+      ]
+    });
     if (!business) {
       return res.status(404).json({ success: false, message: "İşletme bulunamadı" });
     }

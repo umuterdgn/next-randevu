@@ -84,8 +84,13 @@ router.get("/:businessId/feed.ics", async (req, res) => {
   try {
     const { businessId } = req.params;
 
-    // Get business info
-    const business = await Business.findById(businessId);
+    // Get business info - use findOne to handle string business_id
+    const business = await Business.findOne({
+      $or: [
+        { _id: businessId },
+        { business_id: businessId }
+      ]
+    });
     if (!business) {
       return res.status(404).send("Business not found");
     }

@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for 401 errors
+// Response interceptor for 401 and 403 errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -34,6 +34,13 @@ api.interceptors.response.use(
 
       // Redirect to login page
       window.location.href = "/login";
+    }
+
+    // Handle require_apply flag (user needs to create business)
+    if (error.response?.data?.require_apply || (error.response?.status === 403 && error.response?.data?.require_apply)) {
+      // Redirect to apply page without showing error
+      window.location.href = "/apply";
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
