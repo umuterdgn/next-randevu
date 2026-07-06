@@ -37,6 +37,7 @@ import {
   Send,
   Lock,
   Download,
+  Copy,
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import { useAuth } from "../context/AuthContext";
@@ -554,6 +555,27 @@ const handleSaveSettings = async () => {
                 value={`%${dash?.customer_retention_rate || 0}`}
                 icon={Users}
               />
+            </div>
+          </div>
+
+          {/* Share Business Link Button */}
+          <div className="card w-full mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-700 mb-1">Randevu Sayfası Linki</h3>
+                <p className="text-sm text-slate-500">Müşterilerinize bu linki göndererek randevu alabilirler</p>
+              </div>
+              <button
+                onClick={() => {
+                  const link = `https://tamvaktinde.com.tr/${dash?.slug || ''}`;
+                  navigator.clipboard.writeText(link);
+                  toast.success('Bağlantı kopyalandı!');
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+                Bağlantıyı Kopyala
+              </button>
             </div>
           </div>
 

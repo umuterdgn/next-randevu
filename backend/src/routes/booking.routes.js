@@ -397,7 +397,12 @@ router.patch("/:appointmentId/complete", asyncHandler(async (req, res) => {
 
   if (!appointment) return res.status(404).json({ success: false, message: "Bulunamadı" });
 
-  let business = await Business.findById(appointment.business_id) || await Business.findOne({ business_id: appointment.business_id });
+  let business = await Business.findOne({
+    $or: [
+      { _id: appointment.business_id },
+      { business_id: appointment.business_id }
+    ]
+  });
   let customer = await Customer.findById(appointment.customer_id);
 
   if (business && customer) {
