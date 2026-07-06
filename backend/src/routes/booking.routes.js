@@ -134,15 +134,21 @@ router.post("/book", asyncHandler(async (req, res) => {
     });
   }
 
-  const appointment = await Appointment.create({
-    business_id: business._id.toString(),
-    customer_id: existingCustomer._id,
-    customer_phone: customer.phone,
-    service_id: serviceId,
-    starts_at: startDate,
-    ends_at: endDate,
-    status: "pending",
-  });
+  let appointment;
+  try {
+    appointment = await Appointment.create({
+      business_id: business._id.toString(),
+      customer_id: existingCustomer._id,
+      customer_phone: customer.phone,
+      service_id: serviceId,
+      starts_at: startDate,
+      ends_at: endDate,
+      status: "pending",
+    });
+  } catch (error) {
+    console.error("Appointment creation error:", error);
+    return res.status(400).json({ success: false, message: error.message });
+  }
 
   try {
     const dateStr = startDate.toISOString().split('T')[0];

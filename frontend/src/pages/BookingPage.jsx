@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../api/client";
 
 const BookingPage = () => {
@@ -145,7 +146,9 @@ const BookingPage = () => {
         setError(response.data.message || "Randevu oluşturulurken bir hata oluştu");
       }
     } catch (err) {
-      setError("Sunucu bağlantı hatası");
+      const errorMessage = err.response?.data?.message || "Sunucu bağlantı hatası";
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error("Booking error:", err);
     } finally {
       setLoading(false);
