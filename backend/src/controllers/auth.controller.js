@@ -7,11 +7,11 @@ import { sendEmail } from "../utils/sendEmail.js";
 export const login = async (req, res) => {
   try {
     const result = await loginUser(req.body);
-    
+
     await logAudit({
       business_id: result.user.business_id,
       // Mongoose'da ID genelde _id olarak döner, bu yüzden .id yoksa ._id alsın diye garantiye alıyoruz
-      user_id: result.user._id || result.user.id, 
+      user_id: result.user._id || result.user.id,
       action: "LOGIN_SUCCESS",
       method: req.method,
       path: req.originalUrl,
@@ -19,7 +19,15 @@ export const login = async (req, res) => {
       ip: req.ip || "",
       user_agent: req.headers["user-agent"] || "",
     });
-    
+
+    // Set cross-domain cookie for production
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json(result);
   } catch (error) {
     await logAudit({
@@ -32,7 +40,7 @@ export const login = async (req, res) => {
       user_agent: req.headers["user-agent"] || "",
       meta: { email: req.body?.email || "" },
     });
-    
+
     // Hatanın çözüldüğü nokta: 'throw error' YERİNE frontend'e hata cevabı (response) dönüyoruz!
     res.status(error.statusCode || 401).json({
       success: false,

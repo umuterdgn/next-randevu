@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../api/client";
 
 export default function AgentLoginPage() {
   const [email, setEmail] = useState("");
@@ -14,22 +15,17 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/agent/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await api.post("/agent/login", { email, password });
 
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem("agent", JSON.stringify(data.data));
+      if (response.data.success) {
+        localStorage.setItem("agent", JSON.stringify(response.data.data));
+        localStorage.setItem("token", response.data.data.token);
         navigate("/agent/dashboard");
       } else {
-        toast.error(data.message || "Giriş başarısız");
+        toast.error(response.data.message || "Giriş başarısız");
       }
     } catch (err) {
-      toast.error("Sunucu bağlantı hatası");
+      toast.error(err.response?.data?.message || "Sunucu bağlantı hatası");
     } finally {
       setLoading(false);
     }

@@ -7,27 +7,39 @@ import { NexaFinance } from "../models/NexaFinance.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { sendWhatsAppMessage } from "../services/whatsapp.service.js";
+import { loginAgent } from "../services/auth.service.js";
 
 const router = Router();
 
 // Agent login
 router.post("/login", asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  const agent = await Agent.findOne({ email, is_active: true });
-  
-  if (!agent || !(await bcrypt.compare(password, agent.password))) {
-    return res.status(401).json({ success: false, message: "Geçersiz email veya şifre" });
+  try {
+    const result = await loginAgent(req.body);
+
+    // Set cross-domain cookie for production
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.json({
+      success: true,
+      data: {
+        _id: result.user._id,
+        name: result.user.name,
+        email: result.user.email,
+        commission_rate: result.user.commission_rate,
+        token: result.token,
+      },
+    });
+  } catch (error) {
+    res.status(error.statusCode || 401).json({
+      success: false,
+      message: error.message || "Geçersiz email veya şifre"
+    });
   }
-  
-  res.json({
-    success: true,
-    data: {
-      _id: agent._id,
-      name: agent.name,
-      email: agent.email,
-      commission_rate: agent.commission_rate,
-    },
-  });
 }));
 
 // Agent register new business
