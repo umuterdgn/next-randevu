@@ -1978,13 +1978,13 @@ const handleSaveSettings = async () => {
                   <input
                     type="text"
                     readOnly
-                    value={`webcal://${import.meta.env.VITE_API_URL?.replace('https://', '').replace('http://', '')}/business/${dash?._id}/calendar.ics`}
+                    value={`webcal://tamvaktinde.com.tr/api/business/${user?.business_id || user?._id}/calendar.ics`}
                     className="input flex-1 bg-white text-sm"
                   />
                   <button
                     onClick={() => {
-                      const apiUrl = import.meta.env.VITE_API_URL?.replace('https://', '').replace('http://', '');
-                      navigator.clipboard.writeText(`webcal://${apiUrl}/business/${dash?._id}/calendar.ics`);
+                      const businessId = user?.business_id || user?._id;
+                      navigator.clipboard.writeText(`webcal://tamvaktinde.com.tr/api/business/${businessId}/calendar.ics`);
                       toast.success("Link kopyalandı!");
                     }}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
