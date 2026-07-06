@@ -165,7 +165,7 @@ router.get("/:id/ics", async (req, res) => {
       status: appointment.status === "completed" ? "CONFIRMED" : "TENTATIVE",
       organizer: {
         name: business.name,
-        email: business.email || "noreply@nxa.online"
+        email: business.email || "noreply@tamvaktinde.com.tr"
       }
     };
 

@@ -1886,7 +1886,7 @@ const handleSaveSettings = async () => {
                           toast.error("İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.");
                           return;
                         }
-                        window.location.href = `http://localhost:5000/api/calendar/auth?businessId=${bizId}`;
+                        window.location.href = `${import.meta.env.VITE_API_URL}/calendar/auth?businessId=${bizId}`;
                       }}
                       className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                     >
@@ -1937,12 +1937,13 @@ const handleSaveSettings = async () => {
                   <input
                     type="text"
                     readOnly
-                    value={`webcal://localhost:5000/api/business/${dash?._id}/calendar.ics`}
+                    value={`webcal://${import.meta.env.VITE_API_URL?.replace('https://', '').replace('http://', '')}/business/${dash?._id}/calendar.ics`}
                     className="input flex-1 bg-white text-sm"
                   />
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`webcal://localhost:5000/api/business/${dash?._id}/calendar.ics`);
+                      const apiUrl = import.meta.env.VITE_API_URL?.replace('https://', '').replace('http://', '');
+                      navigator.clipboard.writeText(`webcal://${apiUrl}/business/${dash?._id}/calendar.ics`);
                       toast.success("Link kopyalandı!");
                     }}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
@@ -1955,7 +1956,6 @@ const handleSaveSettings = async () => {
                   Apple Calendar: Dosya → Yeni Takvim Aboneliği → URL<br/>
                   Google Calendar: Ayarlar → URL ile Takvim Ekle<br/>
                   Outlook: Takvim → Takvim Ekle → Abonelikten<br/>
-                  <span className="text-amber-600 font-medium">Not: Canlıya çıkınca localhost yerine nxa.online kullanılacak.</span>
                 </p>
               </div>
             </div>

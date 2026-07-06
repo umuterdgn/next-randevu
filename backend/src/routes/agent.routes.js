@@ -162,7 +162,7 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       });
     } else {
       // Credit card payment: generate payment link, no sale record yet
-      const payment_link = `https://nxa.com.tr/checkout?biz_id=${business._id}&plan=${plan || 'physical'}&agent_id=${agent_id}`;
+      const payment_link = `https://tamvaktinde.com.tr/checkout?biz_id=${business._id}&plan=${plan || 'physical'}&agent_id=${agent_id}`;
 
       res.status(201).json({
         success: true,
@@ -178,8 +178,35 @@ router.post("/register-business", asyncHandler(async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Register business error:", error);
-    res.status(500).json({ success: false, message: "İşletme kaydı sırasında hata oluştu" });
+    console.error("🔴 REGISTER BUSINESS ERROR DETAILS:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack,
+      errors: error.errors
+    });
+    
+    // Handle specific error cases
+    if (error.code === 11000) {
+      // Duplicate key error
+      const field = Object.keys(error.keyPattern || {})[0] || 'bilinmeyen alan';
+      return res.status(400).json({ 
+        success: false, 
+        message: `Bu ${field} zaten kullanımda. Lütfen farklı bir değer deneyin.` 
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Doğrulama hatası: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}` 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: `İşletme kaydı sırasında hata oluştu: ${error.message}` 
+    });
   }
 }));
 

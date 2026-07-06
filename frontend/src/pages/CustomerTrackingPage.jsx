@@ -338,7 +338,7 @@ export default function CustomerTrackingPage() {
             <Globe className="w-8 h-8 text-blue-500" /> Google Takvim
           </button>
           <a
-            href={`http://localhost:5000/api/calendar/appointment/${appointment.id}/download.ics`}
+            href={`${import.meta.env.VITE_API_URL}/calendar/appointment/${appointment.id}/download.ics`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex flex-col items-center justify-center gap-2 p-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-2xl transition-all shadow-sm"

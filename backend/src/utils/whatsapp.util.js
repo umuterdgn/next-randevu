@@ -31,7 +31,7 @@ export const sendWhatsAppNotification = async (phone, appointmentId, businessNam
     console.log("WA Token mevcut mu:", tokenToUse ? "Evet" : "Hayır");
     console.log("WA Phone Number ID:", phoneIdToUse);
 
-    const msg = `Merhaba! 📅 ${businessName} işletmesindeki randevunuz ${date} saat ${time} için onaylanmıştır.\n\nDetaylar, iptal ve takvim için tıklayın: https://nxa.online/randevu/${appointmentId}`;
+    const msg = `Merhaba! 📅 ${businessName} işletmesindeki randevunuz ${date} saat ${time} için onaylanmıştır.\n\nDetaylar, iptal ve takvim için tıklayın: https://tamvaktinde.com.tr/randevu/${appointmentId}`;
 
     console.log("Mesaj içeriği:", msg);
 

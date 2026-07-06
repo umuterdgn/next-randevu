@@ -37,7 +37,7 @@ export const startCronJobs = () => {
           let cleanPhone = appointment.customer_phone.replace(/[^0-9]/g, '');
           if (cleanPhone.startsWith('0')) cleanPhone = '90' + cleanPhone.substring(1);
 
-          const msg = `Merhaba! ⏳ Hatırlatma: ${business.name} işletmesindeki randevunuzun başlamasına yaklaşık 40 dakika kalmıştır. Sizi bekliyoruz!\n\nDetaylar: https://nxa.online/randevu/${appointment._id}`;
+          const msg = `Merhaba! ⏳ Hatırlatma: ${business.name} işletmesindeki randevunuzun başlamasına yaklaşık 40 dakika kalmıştır. Sizi bekliyoruz!\n\nDetaylar: https://tamvaktinde.com.tr/randevu/${appointment._id}`;
 
           await axios.post(
             `https://graph.facebook.com/v17.0/${process.env.WA_PHONE_NUMBER_ID}/messages`,

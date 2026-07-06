@@ -116,7 +116,7 @@ router.get("/:businessId/feed.ics", async (req, res) => {
         status: apt.status === "completed" ? "CONFIRMED" : "TENTATIVE",
         organizer: {
           name: business.name,
-          email: business.email || "noreply@nxa.online"
+          email: business.email || "noreply@tamvaktinde.com.tr"
         }
       };
     });
@@ -174,7 +174,7 @@ router.get("/appointment/:id/download.ics", async (req, res) => {
       status: appointment.status === "completed" ? "CONFIRMED" : "TENTATIVE",
       organizer: {
         name: business.name,
-        email: business.email || "noreply@nxa.online"
+        email: business.email || "noreply@tamvaktinde.com.tr"
       }
     };
 

@@ -158,7 +158,7 @@ router.get("/:businessId/calendar.ics", async (req, res) => {
 
       return [
         'BEGIN:VEVENT',
-        `UID:${appt._id}@nxa.online`,
+        `UID:${appt._id}@tamvaktinde.com.tr`,
         `DTSTART:${formatICSDate(startDate)}`,
         `DTEND:${formatICSDate(endDate)}`,
         `SUMMARY:${serviceName}`,

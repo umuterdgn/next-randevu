@@ -81,7 +81,7 @@ async function bookAppointment(phoneNumber, service_type, date, time, businessId
     console.log("✅ RANDEVU BAŞARIYLA KAYDEDİLDİ");
     return {
       success: true,
-      message: `Randevu başarıyla kaydedildi. Müşteriye şu profil linkini mutlaka ilet: https://nxa.online/randevu/${appointment._id}`,
+      message: `Randevu başarıyla kaydedildi. Müşteriye şu profil linkini mutlaka ilet: https://tamvaktinde.com.tr/randevu/${appointment._id}`,
       appointmentId: appointment._id,
     };
   } catch (error) {
@@ -134,7 +134,7 @@ async function checkAppointments(phoneNumber, businessId) {
       return {
         success: true,
         appointments: formattedAppointments,
-        message: `Kullanıcının mevcut randevuları var. Onlara şu linki gönder: https://nxa.online/randevu/${appointmentIds}. Başka bir soru sorma, sadece bu linki ilet ve iyi günler dile.`
+        message: `Kullanıcının mevcut randevuları var. Onlara şu linki gönder: https://tamvaktinde.com.tr/randevu/${appointmentIds}. Başka bir soru sorma, sadece bu linki ilet ve iyi günler dile.`
       };
     }
 
@@ -362,7 +362,7 @@ KESİN KURALLAR (BUNLARA UYMAZSAN SİSTEM ÇÖKER):
 1. ERKEN ÇAĞIRI YASAĞI: Eğer kullanıcı randevu almak istiyorsa ancak HİZMET, TARİH ve SAAT bilgilerinin ÜÇÜNÜ DE net olarak belirtmediyse ASLA 'book_appointment' fonksiyonunu ÇAĞIRMA. Eksik olan bilgiyi (Örn: "Hangi saatte gelmek istersiniz?") düz metin olarak nazikçe sor. Sadece 3 bilgi de tamamsa fonksiyonu çağır.
 2. UYDURMA YASAĞI: Kullanıcı saat belirtmediğinde ASLA kafandan 09:00, 12:00 gibi saatler uydurup fonksiyonu çağırma.
 3. ZİNCİRLEME: Kullanıcı randevusunu İPTAL ETMEK veya DEĞİŞTİRMEK isterse ve eski saati söylemezse, ÖNCE KESİNLİKLE 'check_appointments' fonksiyonunu çağırıp randevusunu bul. Sonra işlemi yap.
-4. KISA CEVAP: book_appointment başarılı olursa "Harika! Randevunuz oluşturuldu." de. update_appointment başarılı olursa "Harika! Randevunuz güncellendi." de. Her iki durumda da SADECE sana tool tarafından verilen o nxa.online profil linkini ilet, asla example.com gibi linkler uydurma.`;
+4. KISA CEVAP: book_appointment başarılı olursa "Harika! Randevunuz oluşturuldu." de. update_appointment başarılı olursa "Harika! Randevunuz güncellendi." de. Her iki durumda da SADECE sana tool tarafından verilen o tamvaktinde.com.tr profil linkini ilet, asla example.com gibi linkler uydurma.`;
 
   // Get or create session history for this phone number
   if (!userSessions.has(phoneNumber)) {
@@ -495,7 +495,7 @@ KESİN KURALLAR (BUNLARA UYMAZSAN SİSTEM ÇÖKER):
         // Add appointment tracking link to the final response
         let finalMessage = aiResponse;
         if (result.success && result.appointmentId) {
-          finalMessage = aiResponse + `\n\n📅 Randevu detaylarınızı, sadakat puanınızı ve takvim bağlantılarınızı görmek için tıklayın: https://nxa.online/randevu/${result.appointmentId}`;
+          finalMessage = aiResponse + `\n\n📅 Randevu detaylarınızı, sadakat puanınızı ve takvim bağlantılarınızı görmek için tıklayın: https://tamvaktinde.com.tr/randevu/${result.appointmentId}`;
         }
 
         // Add final response to history
@@ -652,7 +652,7 @@ KESİN KURALLAR (BUNLARA UYMAZSAN SİSTEM ÇÖKER):
         const result = updated
           ? {
               success: true,
-              message: `Randevunuz başarıyla güncellendi. 📅 Güncel detaylar ve takvim bağlantısı için tıklayın: https://nxa.online/randevu/${updated._id}`
+              message: `Randevunuz başarıyla güncellendi. 📅 Güncel detaylar ve takvim bağlantısı için tıklayın: https://tamvaktinde.com.tr/randevu/${updated._id}`
             }
           : {
               success: false,
@@ -785,7 +785,7 @@ KESİN KURALLAR (BUNLARA UYMAZSAN SİSTEM ÇÖKER):
           
           // Add appointment tracking link if successful
           if (result.success && result.appointmentId) {
-            aiResponseText += `\n\n📅 Randevu detaylarınızı, sadakat puanınızı ve takvim bağlantılarınızı görmek için tıklayın: https://nxa.online/randevu/${result.appointmentId}`;
+            aiResponseText += `\n\n📅 Randevu detaylarınızı, sadakat puanınızı ve takvim bağlantılarınızı görmek için tıklayın: https://tamvaktinde.com.tr/randevu/${result.appointmentId}`;
           }
         }
       } catch (e) {

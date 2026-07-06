@@ -110,7 +110,7 @@ router.post("/whatsapp", async (req, res) => {
     // WhatsApp Kill Switch Check
     if (!business.integrations?.whatsappEnabled) {
       console.log("🚫 WhatsApp entegrasyonu kapalı - Kill Switch aktif");
-      const replyText = `Merhaba! 🤖 Şu an WhatsApp üzerinden otomatik randevu hizmetimiz geçici olarak kapalıdır. Tüm randevu alma, iptal ve hizmetlerimizi görüntüleme işlemleri için lütfen web sitemizi ziyaret edin: https://nxa.online/booking/${business.slug}`;
+      const replyText = `Merhaba! 🤖 Şu an WhatsApp üzerinden otomatik randevu hizmetimiz geçici olarak kapalıdır. Tüm randevu alma, iptal ve hizmetlerimizi görüntüleme işlemleri için lütfen web sitemizi ziyaret edin: https://tamvaktinde.com.tr/booking/${business.slug}`;
 
       await axios.post(
         `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,

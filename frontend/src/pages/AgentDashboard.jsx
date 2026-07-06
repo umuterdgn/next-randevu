@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Plus, LogOut, TrendingUp, DollarSign, Users, Copy, MessageCircle, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../api/client";
 
 export default function AgentDashboard() {
   const [agent, setAgent] = useState(null);
@@ -38,12 +39,11 @@ export default function AgentDashboard() {
 
   const loadSalesHistory = async (agentId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/agent/sales/${agentId}`);
-      const data = await response.json();
-      if (data.success) {
-        setSales(data.data.sales);
-        setTotalSales(data.data.totalSales);
-        setTotalCommission(data.data.totalCommission);
+      const response = await api.get(`/agent/sales/${agentId}`);
+      if (response.data.success) {
+        setSales(response.data.data.sales);
+        setTotalSales(response.data.data.totalSales);
+        setTotalCommission(response.data.data.totalCommission);
       }
     } catch (error) {
       console.error("Satış geçmişi yüklenirken hata:", error);
@@ -55,24 +55,18 @@ export default function AgentDashboard() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/agent/register-business", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...registrationForm,
-          amount: parseFloat(registrationForm.amount),
-          agent_id: agent._id,
-          plan: selectedPlan,
-        }),
+      const response = await api.post("/agent/register-business", {
+        ...registrationForm,
+        amount: parseFloat(registrationForm.amount),
+        agent_id: agent._id,
+        plan: selectedPlan,
       });
-
-      const data = await response.json();
 
       if (response.status === 200 || response.status === 201) {
         // Check if payment_link exists (credit card) or not (cash)
-        if (data.data.payment_link) {
+        if (response.data.data.payment_link) {
           // Credit card payment: show payment link modal
-          setPaymentLink(data.data.payment_link);
+          setPaymentLink(response.data.data.payment_link);
           setShowRegistrationForm(false);
           setShowSuccessState(true);
         } else {
@@ -93,10 +87,10 @@ export default function AgentDashboard() {
         setSelectedPlan("physical");
         loadSalesHistory(agent._id);
       } else {
-        toast.error(data.message || "Kayıt başarısız");
+        toast.error(response.data.message || "Kayıt başarısız");
       }
     } catch (error) {
-      toast.error("Sunucu bağlantı hatası");
+      toast.error(error.response?.data?.message || "Sunucu bağlantı hatası");
     } finally {
       setLoading(false);
     }

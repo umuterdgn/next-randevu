@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import api from "../api/client";
 
 const BookingPage = () => {
   const { slug } = useParams();
@@ -36,17 +37,14 @@ const BookingPage = () => {
       try {
         setLoading(true);
         setError("");
-        const businessResponse = await fetch(`http://localhost:5000/api/booking/business/${slug}`, {
-          cache: 'no-store'
-        });
-        const businessData = await businessResponse.json();
+        const businessResponse = await api.get(`/booking/business/${slug}`);
 
-        console.log("Frontend'e gelen veri:", businessData);
-        console.log("Frontend'e gelen servisler:", businessData.services);
+        console.log("Frontend'e gelen veri:", businessResponse.data);
+        console.log("Frontend'e gelen servisler:", businessResponse.data.services);
 
-        if (businessData.business) {
-          setBusiness(businessData.business);
-          setServices(businessData.services || []);
+        if (businessResponse.data.business) {
+          setBusiness(businessResponse.data.business);
+          setServices(businessResponse.data.services || []);
         } else {
           setError("İşletme bilgileri yüklenirken bir hata oluştu");
         }
@@ -76,13 +74,10 @@ const BookingPage = () => {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(
-          `http://localhost:5000/api/booking/availability?slug=${slug}&date=${date}&serviceDuration=${selectedService.duration}`
-        );
-        const data = await response.json();
+        const response = await api.get(`/booking/availability?slug=${slug}&date=${date}&serviceDuration=${selectedService.duration}`);
 
-        if (data.success) {
-          setAvailableSlots(data.data.availableSlots);
+        if (response.data.success) {
+          setAvailableSlots(response.data.data.availableSlots);
         } else {
           setError("Müsait saatler yüklenirken bir hata oluştu");
         }
@@ -129,20 +124,12 @@ const BookingPage = () => {
         },
       };
 
-      const response = await fetch("http://localhost:5000/api/booking/book", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bookingData),
-      });
+      const response = await api.post("/booking/book", bookingData);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setSuccess(true);
         // Redirect to appointment tracking page
-        const appointmentId = data.appointment?._id || data.data?._id || data.appointmentId;
+        const appointmentId = response.data.appointment?._id || response.data.data?._id || response.data.appointmentId;
         if (appointmentId) {
           navigate(`/randevu/${appointmentId}`);
         } else {
@@ -155,7 +142,7 @@ const BookingPage = () => {
           setAvailableSlots([]);
         }
       } else {
-        setError(data.message || "Randevu oluşturulurken bir hata oluştu");
+        setError(response.data.message || "Randevu oluşturulurken bir hata oluştu");
       }
     } catch (err) {
       setError("Sunucu bağlantı hatası");

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Star, CheckCircle, XCircle, Clock3, AlertCircle, Download, Globe, Plus, MapPin, Info, ArrowRight, Phone, Video } from "lucide-react";
+import api from "../api/client";
 
 const statusConfig = {
   pending: { label: "Bekliyor", icon: Clock3, color: "bg-amber-100 text-amber-700 border-amber-200", bgColor: "bg-amber-50" },
@@ -29,20 +30,18 @@ const AppointmentTrackingPage = () => {
     const fetchAppointment = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/booking/track/${id}`);
-        const result = await response.json();
+        const response = await api.get(`/booking/track/${id}`);
 
-        if (result.success) {
-          setData(result.data);
-          if (result.data.customer?.phone) {
-            const allResponse = await fetch(`http://localhost:5000/api/booking/customer/${result.data.customer.phone}`);
-            const allResult = await allResponse.json();
-            if (allResult.success) {
-              setAppointments(allResult.data || []);
+        if (response.data.success) {
+          setData(response.data.data);
+          if (response.data.data.customer?.phone) {
+            const allResponse = await api.get(`/booking/customer/${response.data.data.customer.phone}`);
+            if (allResponse.data.success) {
+              setAppointments(allResponse.data.data || []);
             }
           }
         } else {
-          setError(result.message || "Randevu bulunamadı");
+          setError(response.data.message || "Randevu bulunamadı");
         }
       } catch (err) {
         setError("Sunucu bağlantı hatası");
@@ -88,14 +87,13 @@ const AppointmentTrackingPage = () => {
   const handleCancelAppointment = async (appointmentId) => {
     try {
       setCancelling(appointmentId);
-      const response = await fetch(`http://localhost:5000/api/booking/track/${appointmentId}/cancel`, { method: 'PATCH' });
-      const result = await response.json();
+      const response = await api.patch(`/booking/track/${appointmentId}/cancel`);
 
-      if (result.success) {
+      if (response.data.success) {
         alert("Randevu başarıyla iptal edildi");
         window.location.reload();
       } else {
-        alert(result.message || "İptal işlemi başarısız");
+        alert(response.data.message || "İptal işlemi başarısız");
       }
     } catch (err) {
       alert("Sunucu bağlantı hatası");
@@ -108,22 +106,17 @@ const AppointmentTrackingPage = () => {
   const handleReschedule = async () => {
     setIsRescheduling(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/booking/track/${id}/update`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          starts_at: `${rescheduleDate}T${rescheduleTime}:00.000Z`,
-          ends_at: `${rescheduleDate}T${rescheduleTime}:00.000Z`
-        })
+      const response = await api.patch(`/booking/track/${id}/update`, {
+        starts_at: `${rescheduleDate}T${rescheduleTime}:00.000Z`,
+        ends_at: `${rescheduleDate}T${rescheduleTime}:00.000Z`
       });
-      const result = await response.json();
 
-      if (result.success) {
+      if (response.data.success) {
         alert("Randevunuz başarıyla ertelendi, işletme onayına sunuldu.");
         setShowReschedulePopup(false);
         window.location.reload();
       } else {
-        alert(result.message || "Erteleme işlemi başarısız oldu.");
+        alert(response.data.message || "Erteleme işlemi başarısız oldu.");
       }
     } catch (error) {
       alert("Sunucu bağlantı hatası");
@@ -293,7 +286,7 @@ const AppointmentTrackingPage = () => {
                 Google Takvim
               </a>
               <a
-                href={`http://localhost:5000/api/calendar/appointment/${id}/download.ics`}
+                href={`${import.meta.env.VITE_API_URL}/calendar/appointment/${id}/download.ics`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition-colors shadow-sm"
