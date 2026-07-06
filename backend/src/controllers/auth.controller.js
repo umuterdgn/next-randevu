@@ -71,7 +71,7 @@ export const forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL || 'https://tamvaktinde.com.tr'}/reset-password/${resetToken}`;
 
     // Create HTML email template
     const htmlContent = `

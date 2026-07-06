@@ -5,7 +5,7 @@ import { google } from 'googleapis';
 export const getGoogleAuthUrl = (businessId) => {
   // Eğer env okunamazsa hata atmasın diye kontrol ekle
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/callback';
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://tamvaktinde.com.tr/api/calendar/callback';
 
   if (!clientId) {
     console.error("KRİTİK: GOOGLE_CLIENT_ID .env dosyasında bulunamadı!");
@@ -31,7 +31,7 @@ export const createGoogleEvent = async (tokens, appointment) => {
   console.log('[Google API] Appointment data:', appointment);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/calendar/callback';
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://tamvaktinde.com.tr/api/calendar/callback';
 
   console.log('[Google API] Setting up OAuth2 client...');
   const oauth2Client = new google.auth.OAuth2(
