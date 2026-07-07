@@ -631,16 +631,16 @@ export default function BusinessPage() {
               <button
                 onClick={async () => {
                   try {
-                    // Hem dash objesinden hem de kullanıcıdan slug/id çekmeyi dene
-                    const businessIdentifier =
-                      dash?.slug || dash?.business_id || user?.business_id;
-                    if (!businessIdentifier) {
-                      toast.error("İşletme bağlantısı henüz hazır değil.");
+                    // SADECE slug'ı kontrol et, yoksa hata ver.
+                    if (!dash?.slug) {
+                      toast.error(
+                        "İşletmenizin özel adresi (slug) henüz tanımlanmamış. Lütfen ayarlarınızı kontrol edin.",
+                      );
                       return;
                     }
-                    const link = `https://tamvaktinde.com.tr/${businessIdentifier}`;
+                    const link = `https://tamvaktinde.com.tr/${dash.slug}`;
                     await navigator.clipboard.writeText(link);
-                    toast.success("Bağlantı kopyalandı!");
+                    toast.success("Bağlantı kopyalandı: " + link);
                   } catch (err) {
                     toast.error("Bağlantı kopyalanamadı.");
                   }
