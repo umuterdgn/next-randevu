@@ -52,9 +52,19 @@ export const addService = async (req, res) => {
   } catch (error) {
     console.error("Service creation error:", error);
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: "Bu isimde bir servis zaten mevcut." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Bu isimde bir servis zaten mevcut.",
+        });
     }
-    res.status(400).json({ success: false, message: error.message || "Servis eklenirken hata oluştu." });
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: error.message || "Servis eklenirken hata oluştu.",
+      });
   }
 };
 
@@ -125,7 +135,7 @@ export const listAppointments = async (req, res) => {
 };
 
 export const addAppointment = async (req, res) => {
-  console.log('🔴 DİKKAT: ADMIN RANDEVU İSTEĞİ BURAYA GELDİ!', req.body);
+  console.log("🔴 DİKKAT: ADMIN RANDEVU İSTEĞİ BURAYA GELDİ!", req.body);
 
   const data = await createAppointment(req.business_id, req.body);
 
@@ -133,17 +143,18 @@ export const addAppointment = async (req, res) => {
 
   // WhatsApp notification for admin bookings
   try {
-    const { Customer } = await import('../models/Customer.js');
-    const { Business } = await import('../models/Business.js');
-    const { sendWhatsAppNotification } = await import('../utils/whatsapp.util.js');
+    const { Customer } = await import("../models/Customer.js");
+    const { Business } = await import("../models/Business.js");
+    const { sendWhatsAppNotification } =
+      await import("../utils/whatsapp.util.js");
 
     const customer = await Customer.findById(req.body.customer_id);
     // DÜZELTİLDİ: $or tuzağı kaldırıldı
     const business = await Business.findOne({ business_id: req.business_id });
 
     if (customer?.phone && business) {
-      const appointmentDate = new Date(data.date).toLocaleDateString('tr-TR');
-      const appointmentTime = data.time || '';
+      const appointmentDate = new Date(data.date).toLocaleDateString("tr-TR");
+      const appointmentTime = data.time || "";
 
       await sendWhatsAppNotification(
         customer.phone,
@@ -151,12 +162,15 @@ export const addAppointment = async (req, res) => {
         business.name,
         appointmentDate,
         appointmentTime,
-        business
+        business,
       );
       console.log("✅ ADMIN WA BAŞARILI");
     }
   } catch (waError) {
-    console.error("❌ ADMIN WHATSAPP HATASI:", waError?.response?.data || waError.message);
+    console.error(
+      "❌ ADMIN WHATSAPP HATASI:",
+      waError?.response?.data || waError.message,
+    );
   }
 
   await logAudit({
@@ -175,29 +189,39 @@ export const addAppointment = async (req, res) => {
 
 export const patchAppointmentStatus = async (req, res) => {
   const oldAppointment = await Appointment.findById(req.params.id);
-  const data = await updateAppointmentStatus(req.business_id, req.params.id, req.body.status);
+  const data = await updateAppointmentStatus(
+    req.business_id,
+    req.params.id,
+    req.body.status,
+  );
 
-  if (req.body.status === 'completed' && oldAppointment.status !== 'completed') {
+  if (
+    req.body.status === "completed" &&
+    oldAppointment.status !== "completed"
+  ) {
     // Update customer loyalty points - use business_id to ensure correct customer
     const customer = await Customer.findOneAndUpdate(
       { _id: data.customer_id, business_id: req.business_id },
       { $inc: { loyalty_points: 1, visit_count: 1 } },
-      { new: true }
+      { new: true },
     );
-    console.log("DEBUG: Customer loyalty points updated:", customer?.loyalty_points);
+    console.log(
+      "DEBUG: Customer loyalty points updated:",
+      customer?.loyalty_points,
+    );
   }
 
   // Handle payment_status and Cari accounting
-  if (req.body.status === 'completed' && req.body.payment_status) {
+  if (req.body.status === "completed" && req.body.payment_status) {
     const service = await Service.findById(data.service_id);
     const amount = service ? service.price : 0;
 
-    if (req.body.payment_status === 'unpaid' && amount > 0) {
+    if (req.body.payment_status === "unpaid" && amount > 0) {
       // Record debt to Cari
       let cari = await Cari.findOne({
         business_id: req.business_id,
         entity_type: "customer",
-        entity_id: data.customer_id
+        entity_id: data.customer_id,
       });
       if (!cari) {
         cari = await Cari.create({
@@ -216,16 +240,16 @@ export const patchAppointmentStatus = async (req, res) => {
         date: new Date(),
         amount,
         type: "debt",
-        description: `Randevu ödemesi - ${service?.name || 'Hizmet'}`,
+        description: `Randevu ödemesi - ${service?.name || "Hizmet"}`,
         remaining_amount: amount,
       });
       await cari.save();
-    } else if (req.body.payment_status === 'paid' && amount > 0) {
+    } else if (req.body.payment_status === "paid" && amount > 0) {
       // Handle immediate cash payment - record both debt and payment
       let cari = await Cari.findOne({
         business_id: req.business_id,
         entity_type: "customer",
-        entity_id: data.customer_id
+        entity_id: data.customer_id,
       });
       if (!cari) {
         cari = await Cari.create({
@@ -245,7 +269,7 @@ export const patchAppointmentStatus = async (req, res) => {
         date: new Date(),
         amount,
         type: "debt",
-        description: `Randevu ödemesi - ${service?.name || 'Hizmet'}`,
+        description: `Randevu ödemesi - ${service?.name || "Hizmet"}`,
         remaining_amount: amount,
       });
 
@@ -256,7 +280,7 @@ export const patchAppointmentStatus = async (req, res) => {
         date: new Date(),
         amount,
         type: "payment",
-        description: `Nakit ödeme - ${service?.name || 'Hizmet'}`,
+        description: `Nakit ödeme - ${service?.name || "Hizmet"}`,
       });
       await cari.save();
 
@@ -265,12 +289,14 @@ export const patchAppointmentStatus = async (req, res) => {
         business_id: req.business_id,
         type: "income",
         amount,
-        description: `Randevu ödemesi - ${service?.name || 'Hizmet'}`,
+        description: `Randevu ödemesi - ${service?.name || "Hizmet"}`,
       });
     }
 
     // Update appointment payment_status
-    await Appointment.findByIdAndUpdate(req.params.id, { payment_status: req.body.payment_status });
+    await Appointment.findByIdAndUpdate(req.params.id, {
+      payment_status: req.body.payment_status,
+    });
   }
 
   await logAudit({
@@ -282,13 +308,20 @@ export const patchAppointmentStatus = async (req, res) => {
     status_code: 200,
     ip: req.ip || "",
     user_agent: req.headers["user-agent"] || "",
-    meta: { appointment_id: req.params.id, status: req.body.status, payment_status: req.body.payment_status },
+    meta: {
+      appointment_id: req.params.id,
+      status: req.body.status,
+      payment_status: req.body.payment_status,
+    },
   });
   res.json(data);
 };
 
 export const patchRewardThreshold = async (req, res) => {
-  const data = await updateRewardThreshold(req.business_id, req.body.reward_threshold);
+  const data = await updateRewardThreshold(
+    req.business_id,
+    req.body.reward_threshold,
+  );
   await logAudit({
     business_id: req.business_id,
     user_id: req.user?._id || null,
@@ -306,13 +339,38 @@ export const patchRewardThreshold = async (req, res) => {
 export const updateBusinessSettingsController = async (req, res) => {
   console.log("🔴 FRONTEND'DEN GELEN HAM BODY:", req.body);
 
-  const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations, whatsapp_token, whatsapp_phone_number_id, auto_approve_appointments } = req.body;
+  const {
+    name,
+    phone,
+    address,
+    theme_color,
+    logo_url,
+    reward_threshold,
+    is_loyalty_enabled,
+    bookingSettings,
+    integrations,
+    whatsapp_token,
+    whatsapp_phone_number_id,
+    auto_approve_appointments,
+  } = req.body;
 
-  const final_about_text = req.body.about_text !== undefined ? req.body.about_text : (req.body.aboutText !== undefined ? req.body.aboutText : "");
-  const final_map_url = req.body.map_url !== undefined ? req.body.map_url : (req.body.mapUrl !== undefined ? req.body.mapUrl : "");
+  const final_about_text =
+    req.body.about_text !== undefined
+      ? req.body.about_text
+      : req.body.aboutText !== undefined
+        ? req.body.aboutText
+        : "";
+  const final_map_url =
+    req.body.map_url !== undefined
+      ? req.body.map_url
+      : req.body.mapUrl !== undefined
+        ? req.body.mapUrl
+        : "";
 
   // DÜZELTİLDİ: $or tuzağı kaldırıldı
-  const existingBusiness = await Business.findOne({ business_id: req.business_id });
+  const existingBusiness = await Business.findOne({
+    business_id: req.business_id,
+  });
 
   const updateData = {
     name,
@@ -321,14 +379,23 @@ export const updateBusinessSettingsController = async (req, res) => {
     theme_color,
     logo_url,
     reward_threshold,
-    about_text: final_about_text || (existingBusiness?.about_text || ""),
-    map_url: final_map_url || (existingBusiness?.map_url || ""),
+    about_text: final_about_text || existingBusiness?.about_text || "",
+    map_url: final_map_url || existingBusiness?.map_url || "",
     is_loyalty_enabled,
     bookingSettings,
     integrations,
-    whatsapp_token: whatsapp_token !== undefined ? whatsapp_token : (existingBusiness?.whatsapp_token || ""),
-    whatsapp_phone_number_id: whatsapp_phone_number_id !== undefined ? whatsapp_phone_number_id : (existingBusiness?.whatsapp_phone_number_id || ""),
-    auto_approve_appointments: auto_approve_appointments !== undefined ? auto_approve_appointments : (existingBusiness?.auto_approve_appointments ?? true)
+    whatsapp_token:
+      whatsapp_token !== undefined
+        ? whatsapp_token
+        : existingBusiness?.whatsapp_token || "",
+    whatsapp_phone_number_id:
+      whatsapp_phone_number_id !== undefined
+        ? whatsapp_phone_number_id
+        : existingBusiness?.whatsapp_phone_number_id || "",
+    auto_approve_appointments:
+      auto_approve_appointments !== undefined
+        ? auto_approve_appointments
+        : (existingBusiness?.auto_approve_appointments ?? true),
   };
 
   console.log("📦 VERİTABANINA GÖNDERİLEN NET DATA:", updateData);
@@ -367,7 +434,9 @@ export const createRewardCode = async (req, res) => {
 };
 
 export const listStaff = async (req, res) => {
-  const staff = await Staff.find({ business_id: req.business_id }).sort({ createdAt: -1 });
+  const staff = await Staff.find({ business_id: req.business_id }).sort({
+    createdAt: -1,
+  });
   res.json(staff);
 };
 
@@ -399,7 +468,7 @@ export const updateStaff = async (req, res) => {
   const staff = await Staff.findOneAndUpdate(
     { _id: req.params.id, business_id: req.business_id },
     { name, role, phone, email, is_active },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
   if (!staff) {
     return res.status(404).json({ error: "Staff not found" });
@@ -419,7 +488,10 @@ export const updateStaff = async (req, res) => {
 };
 
 export const deleteStaff = async (req, res) => {
-  const staff = await Staff.findOneAndDelete({ _id: req.params.id, business_id: req.business_id });
+  const staff = await Staff.findOneAndDelete({
+    _id: req.params.id,
+    business_id: req.business_id,
+  });
   if (!staff) {
     return res.status(404).json({ error: "Staff not found" });
   }
@@ -445,16 +517,25 @@ export const redeemReward = async (req, res) => {
     // DÜZELTİLDİ: $or tuzağı kaldırıldı
     const business = await Business.findOne({ business_id: business_id });
     if (!business) {
-      return res.status(404).json({ success: false, message: "İşletme bulunamadı" });
+      return res
+        .status(404)
+        .json({ success: false, message: "İşletme bulunamadı" });
     }
 
     const customer = await Customer.findOne({ _id: customer_id, business_id });
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Müşteri bulunamadı" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Müşteri bulunamadı" });
     }
 
     if (customer.loyalty_points < business.reward_threshold) {
-      return res.status(400).json({ success: false, message: "Müşterinin yeterli sadakat puanı yok" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Müşterinin yeterli sadakat puanı yok",
+        });
     }
 
     customer.loyalty_points -= business.reward_threshold;
@@ -469,45 +550,63 @@ export const redeemReward = async (req, res) => {
       status_code: 200,
       ip: req.ip || "",
       user_agent: req.headers["user-agent"] || "",
-      meta: { customer_id: customer._id, reward_code, points_deducted: business.reward_threshold },
+      meta: {
+        customer_id: customer._id,
+        reward_code,
+        points_deducted: business.reward_threshold,
+      },
     });
 
-    res.json({ success: true, message: "Ödül başarıyla kullanıldı ve puanlar güncellendi", new_points: customer.loyalty_points });
+    res.json({
+      success: true,
+      message: "Ödül başarıyla kullanıldı ve puanlar güncellendi",
+      new_points: customer.loyalty_points,
+    });
   } catch (error) {
     console.error("Ödül kullanım hatası:", error);
-    res.status(500).json({ success: false, message: "Ödül kullanılırken hata oluştu" });
+    res
+      .status(500)
+      .json({ success: false, message: "Ödül kullanılırken hata oluştu" });
   }
 };
 
 export const uploadLogo = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Lütfen bir dosya seçin." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Lütfen bir dosya seçin." });
     }
 
     const idToUse = req.business_id || req.user?.business_id;
 
     if (!idToUse) {
-      return res.status(401).json({ success: false, message: "Yetkisiz işlem: İşletme kimliği bulunamadı." });
+      return res
+        .status(401)
+        .json({
+          success: false,
+          message: "Yetkisiz işlem: İşletme kimliği bulunamadı.",
+        });
     }
 
     // DÜZELTİLDİ: $or tuzağı kaldırıldı
     const business = await Business.findOneAndUpdate(
       { business_id: idToUse },
       { logo_url: req.file.path },
-      { new: true }
+      { new: true },
     );
 
     if (!business) {
-      return res.status(404).json({ success: false, message: "İşletme bulunamadı." });
+      return res
+        .status(404)
+        .json({ success: false, message: "İşletme bulunamadı." });
     }
 
     res.json({
       success: true,
       message: "Logo başarıyla yüklendi!",
-      data: { logo_url: business.logo_url }
+      data: { logo_url: business.logo_url },
     });
-
   } catch (error) {
     console.error("Logo yükleme controller hatası:", error);
     res.status(500).json({ success: false, message: "Sunucu hatası oluştu." });
@@ -520,27 +619,45 @@ export const createBusinessFromUser = async (req, res) => {
     const userId = req.user?._id;
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Yetkisiz işlem" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Yetkisiz işlem" });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Kullanıcı bulunamadı" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Kullanıcı bulunamadı" });
     }
 
-    if (user.business_id && user.business_id !== 'pending') {
-      return res.status(400).json({ success: false, message: "Kullanıcı zaten bir işletmeye sahip" });
+    if (user.business_id && user.business_id !== "pending") {
+      // Sadece ID'si var mı diye bakma, gerçekten öyle bir işletme kurulmuş mu diye veritabanına sor!
+      const existingBiz = await Business.findOne({
+        business_id: user.business_id,
+      });
+      if (existingBiz) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Kullanıcı zaten bir işletmeye sahip",
+          });
+      }
     }
 
-    const planType = user.sso_plan_type || 'physical';
-    const businessId = crypto.randomBytes(16).toString('hex');
-    const slug = business_name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
+    const planType = user.sso_plan_type || "physical";
+    const businessId = crypto.randomBytes(16).toString("hex");
+    const slug =
+      business_name?.toLowerCase().replace(/[^a-z0-9]/g, "-") +
+        "-" +
+        businessId.substring(0, 8) || "business-" + businessId.substring(0, 8);
 
     let extraFeatures = {};
-    if (planType === 'online' || planType === 'full') {
+    if (planType === "online" || planType === "full") {
       extraFeatures.onlineUnlocked = true;
     }
-    if (planType === 'full') {
+    if (planType === "full") {
       extraFeatures.physicalUnlocked = true;
     }
 
@@ -548,16 +665,16 @@ export const createBusinessFromUser = async (req, res) => {
       business_id: businessId,
       slug: slug,
       name: business_name,
-      sector: sector || 'Diğer',
-      phone: phone || user.phone || '',
+      sector: sector || "Diğer",
+      phone: phone || user.phone || "",
       email: email || user.email,
-      city: city || '',
-      address: '',
-      about_text: '',
-      theme_color: '#3B82F6',
+      city: city || "",
+      address: "",
+      about_text: "",
+      theme_color: "#3B82F6",
       is_active: true,
       plan: planType,
-      extraFeatures: extraFeatures
+      extraFeatures: extraFeatures,
     });
 
     user.business_id = business.business_id;
@@ -580,10 +697,15 @@ export const createBusinessFromUser = async (req, res) => {
     res.status(201).json({
       success: true,
       user,
-      business
+      business,
     });
   } catch (error) {
     console.error("Create business from user error:", error);
-    res.status(500).json({ success: false, message: "İşletme oluşturulurken bir hata oluştu" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "İşletme oluşturulurken bir hata oluştu",
+      });
   }
 };
