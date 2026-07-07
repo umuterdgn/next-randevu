@@ -18,13 +18,8 @@ export const getDashboardStats = async (business_id) => {
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Get business info to include slug in response
-  const business = await Business.findOne({
-    $or: [
-      { _id: business_id },
-      { business_id: business_id }
-    ]
-  });
+  // Mongoose $or ObjectId hatasını engellemek için sadece business_id ile arıyoruz
+  const business = await Business.findOne({ business_id });
 
   // If business not found, user needs to create one
   if (!business) {
@@ -90,23 +85,12 @@ export const getDashboardStats = async (business_id) => {
 };
 
 export const getServices = async (business_id) => {
-  const services = await Service.find({
-    $or: [
-      { businessId: business_id },
-      { business: business_id },
-      { business_id: business_id }
-    ]
-  });
+  const services = await Service.find({ business_id });
   return services;
 };
 
 export const createService = async (business_id, payload) => {
-  const business = await Business.findOne({
-    $or: [
-      { _id: business_id },
-      { business_id: business_id }
-    ]
-  });
+  const business = await Business.findOne({ business_id });
   if (!business) throw createError("Business not found", 404);
 
   // Feature gating check for is_online
@@ -119,15 +103,11 @@ export const createService = async (business_id, payload) => {
 
   return Service.create({ ...payload, businessId: business._id, business_id: business.business_id });
 };
+
 export const updateService = async (business_id, serviceId, payload) => {
   // Feature gating check for is_online
   if (payload.is_online === true) {
-    const business = await Business.findOne({
-      $or: [
-        { _id: business_id },
-        { business_id: business_id }
-      ]
-    });
+    const business = await Business.findOne({ business_id });
     if (!business) throw createError("Business not found", 404);
 
     const canUseOnline = business.plan === 'full' || business.plan === 'online' || business.extraFeatures?.onlineUnlocked;
@@ -137,34 +117,22 @@ export const updateService = async (business_id, serviceId, payload) => {
   }
 
   const service = await Service.findOneAndUpdate(
-    {
-      _id: serviceId,
-      $or: [
-        { businessId: business_id },
-        { business: business_id },
-        { business_id: business_id }
-      ]
-    },
+    { _id: serviceId, business_id },
     { ...payload },
     { new: true, runValidators: true }
   );
   if (!service) throw createError("Service not found", 404);
   return service;
 };
+
 export const deleteService = async (business_id, serviceId) => {
-  const service = await Service.findOneAndDelete({ 
-    _id: serviceId,
-    $or: [
-      { businessId: business_id },
-      { business: business_id },
-      { business_id: business_id }
-    ]
-  });
+  const service = await Service.findOneAndDelete({ _id: serviceId, business_id });
   if (!service) throw createError("Service not found", 404);
   return service;
 };
 
 export const getCustomers = async (business_id) => Customer.find({ business_id }).sort({ createdAt: -1 });
+
 export const createCustomer = async (business_id, payload) => {
   const { phone, name, email } = payload;
   return Customer.findOneAndUpdate(
@@ -288,9 +256,8 @@ export const updateRewardThreshold = async (business_id, reward_threshold) => {
 };
 
 export const updateBusinessSettings = async (business_id, settings) => {
-  // business_id can be ObjectId.toString() or string business_id, search both
   const business = await Business.findOneAndUpdate(
-    { $or: [{ _id: business_id }, { business_id: business_id }] },
+    { business_id },
     settings,
     { returnDocument: 'after' }
   );

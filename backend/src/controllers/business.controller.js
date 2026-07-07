@@ -92,7 +92,8 @@ export const deleteServiceController = async (req, res) => {
 
 export const listCustomers = async (req, res) => {
   const data = await getCustomers(req.business_id);
-  const business = await Business.findOne({ $or: [{ _id: req.business_id }, { business_id: req.business_id }] });
+  // DÜZELTİLDİ: $or tuzağı kaldırıldı, sadece business_id arıyoruz
+  const business = await Business.findOne({ business_id: req.business_id });
   const reward_threshold = business?.reward_threshold || 10;
   res.json({ customers: data, reward_threshold });
 };
@@ -137,12 +138,8 @@ export const addAppointment = async (req, res) => {
     const { sendWhatsAppNotification } = await import('../utils/whatsapp.util.js');
 
     const customer = await Customer.findById(req.body.customer_id);
-    const business = await Business.findOne({
-      $or: [
-        { _id: req.business_id },
-        { business_id: req.business_id }
-      ]
-    });
+    // DÜZELTİLDİ: $or tuzağı kaldırıldı
+    const business = await Business.findOne({ business_id: req.business_id });
 
     if (customer?.phone && business) {
       const appointmentDate = new Date(data.date).toLocaleDateString('tr-TR');
@@ -276,11 +273,6 @@ export const patchAppointmentStatus = async (req, res) => {
     await Appointment.findByIdAndUpdate(req.params.id, { payment_status: req.body.payment_status });
   }
 
-  // TODO: WhatsApp Meta API - Durum güncellendiğinde müşteriye mesaj at
-  // if (req.body.status === 'approved') {
-  //   await sendWhatsAppMessage(data.customer_id.phone, `Randevunuz onaylandı: ${data.starts_at}`);
-  // }
-
   await logAudit({
     business_id: req.business_id,
     user_id: req.user?._id || null,
@@ -312,16 +304,15 @@ export const patchRewardThreshold = async (req, res) => {
 };
 
 export const updateBusinessSettingsController = async (req, res) => {
-  // Gelen ham veriyi terminalde görmek için bu logu ekle:
   console.log("🔴 FRONTEND'DEN GELEN HAM BODY:", req.body);
 
   const { name, phone, address, theme_color, logo_url, reward_threshold, is_loyalty_enabled, bookingSettings, integrations, whatsapp_token, whatsapp_phone_number_id, auto_approve_appointments } = req.body;
 
-  // Hem about_text hem aboutText ihtimalini yakala:
   const final_about_text = req.body.about_text !== undefined ? req.body.about_text : (req.body.aboutText !== undefined ? req.body.aboutText : "");
   const final_map_url = req.body.map_url !== undefined ? req.body.map_url : (req.body.mapUrl !== undefined ? req.body.mapUrl : "");
 
-  const existingBusiness = await Business.findOne({ $or: [{ _id: req.business_id }, { business_id: req.business_id }] });
+  // DÜZELTİLDİ: $or tuzağı kaldırıldı
+  const existingBusiness = await Business.findOne({ business_id: req.business_id });
 
   const updateData = {
     name,
@@ -451,24 +442,21 @@ export const redeemReward = async (req, res) => {
     const { reward_code, customer_id } = req.body;
     const business_id = req.business_id;
 
-    // Find the business to get reward_threshold
-    const business = await Business.findOne({ $or: [{ _id: business_id }, { business_id: business_id }] });
+    // DÜZELTİLDİ: $or tuzağı kaldırıldı
+    const business = await Business.findOne({ business_id: business_id });
     if (!business) {
       return res.status(404).json({ success: false, message: "İşletme bulunamadı" });
     }
 
-    // Find the customer
     const customer = await Customer.findOne({ _id: customer_id, business_id });
     if (!customer) {
       return res.status(404).json({ success: false, message: "Müşteri bulunamadı" });
     }
 
-    // Check if customer has enough points
     if (customer.loyalty_points < business.reward_threshold) {
       return res.status(400).json({ success: false, message: "Müşterinin yeterli sadakat puanı yok" });
     }
 
-    // Deduct the reward_threshold from customer's points
     customer.loyalty_points -= business.reward_threshold;
     await customer.save();
 
@@ -503,9 +491,10 @@ export const uploadLogo = async (req, res) => {
       return res.status(401).json({ success: false, message: "Yetkisiz işlem: İşletme kimliği bulunamadı." });
     }
 
+    // DÜZELTİLDİ: $or tuzağı kaldırıldı
     const business = await Business.findOneAndUpdate(
-      { $or: [{ _id: idToUse }, { business_id: idToUse }] },
-      { logo_url: req.file.path }, 
+      { business_id: idToUse },
+      { logo_url: req.file.path },
       { new: true }
     );
 
@@ -534,25 +523,19 @@ export const createBusinessFromUser = async (req, res) => {
       return res.status(401).json({ success: false, message: "Yetkisiz işlem" });
     }
 
-    // Get the user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "Kullanıcı bulunamadı" });
     }
 
-    // Check if user already has a business
     if (user.business_id && user.business_id !== 'pending') {
       return res.status(400).json({ success: false, message: "Kullanıcı zaten bir işletmeye sahip" });
     }
 
-    // Get plan type from SSO or default to 'physical'
     const planType = user.sso_plan_type || 'physical';
-
-    // Generate business_id and slug
     const businessId = crypto.randomBytes(16).toString('hex');
     const slug = business_name?.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + businessId.substring(0, 8) || 'business-' + businessId.substring(0, 8);
 
-    // Set extra features based on plan type
     let extraFeatures = {};
     if (planType === 'online' || planType === 'full') {
       extraFeatures.onlineUnlocked = true;
@@ -561,7 +544,6 @@ export const createBusinessFromUser = async (req, res) => {
       extraFeatures.physicalUnlocked = true;
     }
 
-    // Create Business
     const business = await Business.create({
       business_id: businessId,
       slug: slug,
@@ -578,12 +560,10 @@ export const createBusinessFromUser = async (req, res) => {
       extraFeatures: extraFeatures
     });
 
-    // Update User with new business_id
     user.business_id = business.business_id;
     user.business_ref = business._id;
     await user.save();
 
-    // Log audit
     await logAudit({
       business_id: business.business_id,
       user_id: user._id,
