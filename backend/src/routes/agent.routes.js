@@ -258,10 +258,7 @@ router.get("/sales/:agentId", asyncHandler(async (req, res) => {
   // Manually fetch business details to avoid ObjectId casting issues
   const businessIds = [...new Set(sales.map(s => s.business_id).filter(Boolean))];
   const businesses = await Business.find({
-    $or: [
-      { _id: { $in: businessIds } },
-      { business_id: { $in: businessIds } }
-    ]
+    business_id: { $in: businessIds }
   });
 
   const businessMap = new Map();
@@ -298,10 +295,7 @@ router.get("/admin/all-sales", asyncHandler(async (req, res) => {
     // Manually fetch business details to avoid ObjectId casting issues
     const businessIds = [...new Set(sales.map(s => s.business_id).filter(Boolean))];
     const businesses = await Business.find({
-      $or: [
-        { _id: { $in: businessIds } },
-        { business_id: { $in: businessIds } }
-      ]
+      business_id: { $in: businessIds }
     });
 
     const businessMap = new Map();
