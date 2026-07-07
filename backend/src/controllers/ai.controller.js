@@ -126,7 +126,6 @@ export const generateImageController = async (req, res) => {
       n: 1,
       size: size,
       quality: "auto",
-      response_format: "url",
     });
     const imageData =
       response.data && response.data[0] ? response.data[0] : response;
