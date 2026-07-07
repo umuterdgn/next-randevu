@@ -9,11 +9,15 @@ export const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
+    console.error(`[LOGIN ERROR] Kullanıcı bulunamadı: ${email}`);
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
-  const isMatch = await user.comparePassword(password);
+  // user.comparePassword riskli metodunu çöpe attık, doğrudan bcrypt kullanıyoruz!
+  const isMatch = await bcrypt.compare(password, user.password);
+
   if (!isMatch) {
+    console.error(`[LOGIN ERROR] Şifre eşleşmedi: ${email}`);
     throw createError("E-posta veya şifre hatalı!", 401);
   }
 
