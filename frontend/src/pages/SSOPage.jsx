@@ -25,8 +25,10 @@ export default function SSOPage() {
           // Store auth data using the auth context
           login(response.data.user, response.data.token);
 
-          // Redirect based on Business existence
-          const redirectPath = response.data.redirect || '/business';
+          // EĞER BACKEND SAAS OWNER YÖNLENDİRMESİ VERİRSE ONA GİT,
+          // DİĞER TÜM İŞLETMELERİ AKILLI '/apply' SAYFASINA FIRLAT!
+          const redirectPath =
+            response.data.redirect === "/owner" ? "/owner" : "/apply";
           navigate(redirectPath);
         } else {
           console.error("SSO login failed:", response.data.message);
