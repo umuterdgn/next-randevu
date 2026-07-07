@@ -88,7 +88,11 @@ export default function BusinessPage() {
   const [services, setServices] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [campaigns, setCampaigns] = useState({ whatsapp: "", instagram: "", facebook: "" });
+  const [campaigns, setCampaigns] = useState({
+    whatsapp: "",
+    instagram: "",
+    facebook: "",
+  });
   const [activePlatformTab, setActivePlatformTab] = useState("whatsapp");
   const [editingService, setEditingService] = useState(null);
   const [staff, setStaff] = useState([]);
@@ -117,7 +121,7 @@ export default function BusinessPage() {
   }); // Sadakat ayarları
   const [redeemForm, setRedeemForm] = useState({
     reward_code: "",
-    customer_id: ""
+    customer_id: "",
   }); // Ödül kullanım formu
   const [themeColor, setThemeColor] = useState("#3B82F6"); // Tema rengi
   const [verifyCodes, setVerifyCodes] = useState({}); // 4 haneli kod inputlarını tutmak için
@@ -126,7 +130,7 @@ export default function BusinessPage() {
   const [selectedCampaign, setSelectedCampaign] = useState(null); // Düzenlenecek kampanya
   const [customMessage, setCustomMessage] = useState(""); // Kişiselleştirilmiş mesaj
   const [logoFile, setLogoFile] = useState(null); // Logo dosyası için state
-  
+
   // AI Visual Studio States
   const [imagePrompt, setImagePrompt] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -147,14 +151,14 @@ export default function BusinessPage() {
       bufferTime: 10,
       maxConcurrent: 1,
       slotInterval: 30,
-      cancellationBuffer: 120
+      cancellationBuffer: 120,
     },
     integrations: {
       whatsappEnabled: true,
       googleCalendar: false,
-      appleCalendar: false
+      appleCalendar: false,
     },
-    auto_approve_appointments: true
+    auto_approve_appointments: true,
   });
 
   // Block Time Modal State
@@ -183,7 +187,7 @@ export default function BusinessPage() {
     isOpen: false,
     type: null, // 'service' or 'staff'
     id: null,
-    name: ""
+    name: "",
   });
 
   // Service Edit Modal State
@@ -195,7 +199,7 @@ export default function BusinessPage() {
     description: "",
     critical_points: "",
     process_steps: "",
-    is_online: false
+    is_online: false,
   });
 
   const load = async () => {
@@ -210,13 +214,18 @@ export default function BusinessPage() {
       ]);
       setDash(d.data);
       setServices(s.data);
-setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.data : []));      setAppointments(a.data);
+      setCustomers(
+        c.data?.data ||
+          c.data?.customers ||
+          (Array.isArray(c.data) ? c.data : []),
+      );
+      setAppointments(a.data);
       setStaff(st.data);
 
       // Ayarları yeni rotadan al (settingsRes.data)
       const bData = settingsRes.data;
       if (bData) {
-        setSettings(prev => ({
+        setSettings((prev) => ({
           ...prev,
           name: bData.name || "",
           address: bData.address || "",
@@ -227,24 +236,33 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           whatsapp_token: bData.whatsapp_token || "",
           whatsapp_phone_number_id: bData.whatsapp_phone_number_id || "",
           is_loyalty_enabled: bData.is_loyalty_enabled ?? true,
-          bookingSettings: bData.bookingSettings || { bufferTime: 10, maxConcurrent: 1, slotInterval: 30, cancellationBuffer: 120 },
-          integrations: bData.integrations || { whatsappEnabled: true, googleCalendar: false, appleCalendar: false },
-          auto_approve_appointments: bData.auto_approve_appointments ?? true
+          bookingSettings: bData.bookingSettings || {
+            bufferTime: 10,
+            maxConcurrent: 1,
+            slotInterval: 30,
+            cancellationBuffer: 120,
+          },
+          integrations: bData.integrations || {
+            whatsappEnabled: true,
+            googleCalendar: false,
+            appleCalendar: false,
+          },
+          auto_approve_appointments: bData.auto_approve_appointments ?? true,
         }));
 
         // Also update dash state with fallbacks including plan and extraFeatures
-        setDash(prev => ({
+        setDash((prev) => ({
           ...prev,
           about_text: bData.about_text || "",
           map_url: bData.map_url || "",
           plan: bData.plan || "physical",
-          extraFeatures: bData.extraFeatures || {}
+          extraFeatures: bData.extraFeatures || {},
         }));
 
         // Sembolü ve sayıyı doğru çek:
         setLoyaltySettings({
           threshold: bData.reward_threshold || 10,
-          symbol: bData.loyalty_symbol || "⭐"
+          symbol: bData.loyalty_symbol || "⭐",
         });
 
         // AI kredilerini çek
@@ -253,7 +271,9 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
 
       // Eğer seçili bir müşteri varsa, onu yeni gelen listedeki güncel haliyle güncelle
       if (selectedCustomer) {
-        const updatedCustomer = c.data.find((customer) => customer._id === selectedCustomer._id);
+        const updatedCustomer = c.data.find(
+          (customer) => customer._id === selectedCustomer._id,
+        );
         if (updatedCustomer) {
           setSelectedCustomer(updatedCustomer);
         }
@@ -261,11 +281,16 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
     } catch (error) {
       console.error("Load error:", error);
       // Check if error requires business creation
-      if (error.response?.data?.require_apply || error.response?.status === 404) {
+      if (
+        error.response?.data?.require_apply ||
+        error.response?.status === 404
+      ) {
         navigate("/apply");
         return;
       }
-      toast.error(error.response?.data?.message || "Veriler yüklenirken hata oluştu.");
+      toast.error(
+        error.response?.data?.message || "Veriler yüklenirken hata oluştu.",
+      );
     }
   };
 
@@ -273,7 +298,11 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
     try {
       const params = new URLSearchParams();
       if (selectedDate) {
-        const formattedDate = new Date(selectedDate.getTime() - (selectedDate.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        const formattedDate = new Date(
+          selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000,
+        )
+          .toISOString()
+          .split("T")[0];
         params.append("date", formattedDate);
       }
       if (searchTerm) {
@@ -283,11 +312,15 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
         params.append("status", statusFilter);
       }
 
-      const response = await api.get(`/business/appointments?${params.toString()}`);
+      const response = await api.get(
+        `/business/appointments?${params.toString()}`,
+      );
       setAppointments(response.data);
     } catch (error) {
       console.error("Randevular yüklenirken hata:", error);
-      toast.error(error.response?.data?.message || "Randevular yüklenirken hata oluştu.");
+      toast.error(
+        error.response?.data?.message || "Randevular yüklenirken hata oluştu.",
+      );
     }
   };
 
@@ -307,7 +340,9 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
         toast.success("Çalışma saatleri güncellendi!");
       } else {
         const startDate = new Date(blockForm.date);
-        const endDate = blockEndDate ? new Date(blockEndDate) : new Date(blockForm.date);
+        const endDate = blockEndDate
+          ? new Date(blockEndDate)
+          : new Date(blockForm.date);
 
         const appointmentsToCreate = [];
         let currentDate = new Date(startDate);
@@ -316,11 +351,14 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
           let startsAtISO, endsAtISO;
 
           if (isAllDayBlock) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const startDateTime = new Date(dateStr + 'T00:00:00');
-            const endDateTime = new Date(dateStr + 'T23:59:59');
+            const dateStr = currentDate.toISOString().split("T")[0];
+            const startDateTime = new Date(dateStr + "T00:00:00");
+            const endDateTime = new Date(dateStr + "T23:59:59");
 
-            if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+            if (
+              isNaN(startDateTime.getTime()) ||
+              isNaN(endDateTime.getTime())
+            ) {
               toast.error("Geçersiz tarih formatı");
               return;
             }
@@ -328,11 +366,18 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
             startsAtISO = startDateTime.toISOString();
             endsAtISO = endDateTime.toISOString();
           } else {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const startDateTime = new Date(dateStr + 'T' + blockForm.startTime + ':00');
-            const endDateTime = new Date(dateStr + 'T' + blockForm.endTime + ':00');
+            const dateStr = currentDate.toISOString().split("T")[0];
+            const startDateTime = new Date(
+              dateStr + "T" + blockForm.startTime + ":00",
+            );
+            const endDateTime = new Date(
+              dateStr + "T" + blockForm.endTime + ":00",
+            );
 
-            if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+            if (
+              isNaN(startDateTime.getTime()) ||
+              isNaN(endDateTime.getTime())
+            ) {
               toast.error("Geçersiz tarih veya saat formatı");
               return;
             }
@@ -368,7 +413,9 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
       loadAppointments();
     } catch (err) {
       console.error("Zaman engelleme hatası:", err);
-      toast.error(err.response?.data?.message || "Zaman engellenirken hata oluştu.");
+      toast.error(
+        err.response?.data?.message || "Zaman engellenirken hata oluştu.",
+      );
     }
   };
 
@@ -380,7 +427,7 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
       description: service.description || "",
       critical_points: service.critical_points || "",
       process_steps: service.process_steps || "",
-      is_online: service.is_online || false
+      is_online: service.is_online || false,
     });
     setEditingService(service);
     setShowServiceEditModal(true);
@@ -389,18 +436,18 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
   const handleDeleteService = (serviceId, serviceName) => {
     setDeleteModal({
       isOpen: true,
-      type: 'service',
+      type: "service",
       id: serviceId,
-      name: serviceName
+      name: serviceName,
     });
   };
 
   const confirmDelete = async () => {
     try {
-      if (deleteModal.type === 'service') {
+      if (deleteModal.type === "service") {
         await api.delete(`/business/services/${deleteModal.id}`);
         toast.success("Hizmet başarıyla silindi!");
-      } else if (deleteModal.type === 'staff') {
+      } else if (deleteModal.type === "staff") {
         await api.delete(`/business/staff/${deleteModal.id}`);
         toast.success("Personel başarıyla silindi!");
       }
@@ -422,11 +469,11 @@ setCustomers(c.data?.data || c.data?.customers || (Array.isArray(c.data) ? c.dat
       description: "",
       critical_points: "",
       process_steps: "",
-      is_online: false
+      is_online: false,
     });
   };
 
-const handleSaveSettings = async () => {
+  const handleSaveSettings = async () => {
     try {
       // Mevcut logoyu bir değişkende tutalım
       let currentLogoUrl = settings.logo_url;
@@ -434,15 +481,15 @@ const handleSaveSettings = async () => {
       // 1. Önce Logo Varsa Onu Yükle
       if (logoFile) {
         const formData = new FormData();
-        formData.append('logo', logoFile);
-        
+        formData.append("logo", logoFile);
+
         const logoResponse = await api.patch("/business/logo", formData);
-        
+
         if (logoResponse.data.success) {
           // Yeni yüklenen logonun linkini değişkene al
-          currentLogoUrl = logoResponse.data.data.logo_url; 
-          
-          setSettings(prev => ({ ...prev, logo_url: currentLogoUrl }));
+          currentLogoUrl = logoResponse.data.data.logo_url;
+
+          setSettings((prev) => ({ ...prev, logo_url: currentLogoUrl }));
           setLogoFile(null);
           toast.success("Logo başarıyla yüklendi!");
         }
@@ -461,33 +508,35 @@ const handleSaveSettings = async () => {
         integrations: settings.integrations,
         whatsapp_token: settings.whatsapp_token,
         whatsapp_phone_number_id: settings.whatsapp_phone_number_id,
-        auto_approve_appointments: settings.auto_approve_appointments
+        auto_approve_appointments: settings.auto_approve_appointments,
       });
-      
+
       if (response.data.googleAuthUrl) {
         toast.info("Google Calendar bağlantısı için yönlendiriliyorsunuz...");
         window.location.href = response.data.googleAuthUrl;
         return;
       }
-      
+
       toast.success("Ayarlar başarıyla güncellendi!");
-      load(); 
+      load();
     } catch (error) {
       console.error("🔥 KAYIT HATASI DETAYI:", error.response?.data || error);
       toast.error("Ayarlar güncellenirken hata oluştu");
     }
   };
   const handleBuyCredit = async () => {
-    const loadingToast = toast.loading('Ödeme sayfasına yönlendiriliyor...');
+    const loadingToast = toast.loading("Ödeme sayfasına yönlendiriliyor...");
     try {
-      const response = await api.post('/payment/buy-credits');
+      const response = await api.post("/payment/buy-credits");
       if (response.data.success && response.data.payment_link) {
         toast.dismiss(loadingToast);
         // Redirect to nxa.com.tr payment page
         window.location.href = response.data.payment_link;
       }
     } catch (error) {
-      toast.error('Ödeme linki oluşturulurken hata oluştu.', { id: loadingToast });
+      toast.error("Ödeme linki oluşturulurken hata oluştu.", {
+        id: loadingToast,
+      });
     }
   };
 
@@ -499,17 +548,19 @@ const handleSaveSettings = async () => {
       setRedeemForm({ reward_code: "", customer_id: "" });
       load(); // Reload to get updated customer data
     } catch (error) {
-      toast.error(error.response?.data?.message || "Ödül kullanılırken hata oluştu");
+      toast.error(
+        error.response?.data?.message || "Ödül kullanılırken hata oluştu",
+      );
     }
   };
 
-  const mostUsedServicesData = (dash?.most_used_services || []).map(item => ({
+  const mostUsedServicesData = (dash?.most_used_services || []).map((item) => ({
     name: item.service,
-    count: item.count
+    count: item.count,
   }));
-  const appointmentTrendsData = (dash?.appointment_trend || []).map(item => ({
+  const appointmentTrendsData = (dash?.appointment_trend || []).map((item) => ({
     date: item._id,
-    count: item.count
+    count: item.count,
   }));
 
   return (
@@ -570,14 +621,29 @@ const handleSaveSettings = async () => {
           <div className="card w-full mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-slate-700 mb-1">Randevu Sayfası Linki</h3>
-                <p className="text-sm text-slate-500">Müşterilerinize bu linki göndererek randevu alabilirler</p>
+                <h3 className="font-semibold text-slate-700 mb-1">
+                  Randevu Sayfası Linki
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Müşterilerinize bu linki göndererek randevu alabilirler
+                </p>
               </div>
               <button
-                onClick={() => {
-                  const link = `https://tamvaktinde.com.tr/${dash?.slug || ''}`;
-                  navigator.clipboard.writeText(link);
-                  toast.success('Bağlantı kopyalandı!');
+                onClick={async () => {
+                  try {
+                    // Hem dash objesinden hem de kullanıcıdan slug/id çekmeyi dene
+                    const businessIdentifier =
+                      dash?.slug || dash?.business_id || user?.business_id;
+                    if (!businessIdentifier) {
+                      toast.error("İşletme bağlantısı henüz hazır değil.");
+                      return;
+                    }
+                    const link = `https://tamvaktinde.com.tr/${businessIdentifier}`;
+                    await navigator.clipboard.writeText(link);
+                    toast.success("Bağlantı kopyalandı!");
+                  } catch (err) {
+                    toast.error("Bağlantı kopyalanamadı.");
+                  }
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
               >
@@ -704,7 +770,10 @@ const handleSaveSettings = async () => {
                   load();
                 } catch (err) {
                   console.error("Hata:", err);
-                  toast.error(err.response?.data?.message || "Servis eklenirken hata oluştu.");
+                  toast.error(
+                    err.response?.data?.message ||
+                      "Servis eklenirken hata oluştu.",
+                  );
                 } finally {
                   setIsSubmittingService(false);
                 }
@@ -730,7 +799,11 @@ const handleSaveSettings = async () => {
                   type="number"
                   className="input w-28"
                 />
-                <button type="submit" className="btn-primary whitespace-nowrap px-4" disabled={isSubmittingService}>
+                <button
+                  type="submit"
+                  className="btn-primary whitespace-nowrap px-4"
+                  disabled={isSubmittingService}
+                >
                   {isSubmittingService ? "İşleniyor..." : "Ekle"}
                 </button>
               </div>
@@ -750,9 +823,14 @@ const handleSaveSettings = async () => {
                 className="input w-full h-20 resize-none"
               />
               {(() => {
-                const canUseOnline = dash?.plan === 'full' || dash?.plan === 'online' || dash?.extraFeatures?.onlineUnlocked;
+                const canUseOnline =
+                  dash?.plan === "full" ||
+                  dash?.plan === "online" ||
+                  dash?.extraFeatures?.onlineUnlocked;
                 return (
-                  <div className={`flex items-center gap-3 p-4 rounded-lg border ${canUseOnline ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+                  <div
+                    className={`flex items-center gap-3 p-4 rounded-lg border ${canUseOnline ? "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200" : "bg-slate-50 border-slate-200 opacity-60"}`}
+                  >
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         name="is_online"
@@ -761,24 +839,36 @@ const handleSaveSettings = async () => {
                         className="sr-only peer"
                         disabled={!canUseOnline}
                       />
-                      <div className={`w-11 h-6 ${canUseOnline ? 'bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300' : 'bg-slate-300'} rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${canUseOnline ? 'peer-checked:bg-indigo-600' : 'peer-checked:bg-slate-400'}`}></div>
+                      <div
+                        className={`w-11 h-6 ${canUseOnline ? "bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300" : "bg-slate-300"} rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${canUseOnline ? "peer-checked:bg-indigo-600" : "peer-checked:bg-slate-400"}`}
+                      ></div>
                     </label>
                     <div className="flex-1">
                       <p className="font-semibold text-slate-800 flex items-center gap-2">
                         🌐 Online Görüşme (Google Meet)
-                        {!canUseOnline && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">🔒 Premium</span>}
+                        {!canUseOnline && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
+                            🔒 Premium
+                          </span>
+                        )}
                       </p>
-                      <p className="text-sm text-slate-600">Bu hizmet seçildiğinde müşteriye otomatik Google Meet linki gönderilir.</p>
+                      <p className="text-sm text-slate-600">
+                        Bu hizmet seçildiğinde müşteriye otomatik Google Meet
+                        linki gönderilir.
+                      </p>
                     </div>
                     {!canUseOnline && (
                       <button
                         type="button"
                         onClick={() => {
-                          const bizId = user?.business_id || user?._id || dash?._id;
+                          const bizId =
+                            user?.business_id || user?._id || dash?._id;
                           if (bizId) {
                             window.location.href = `https://nxa.com.tr/checkout?biz_id=${bizId}&type=upgrade`;
                           } else {
-                            toast.error('İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.');
+                            toast.error(
+                              "İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.",
+                            );
                           }
                         }}
                         className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
@@ -796,42 +886,45 @@ const handleSaveSettings = async () => {
                   Henüz servis eklenmemiş.
                 </p>
               ) : null}
-              {Array.isArray(services) && services.map((s) => (
-                <div
-                  key={s._id}
-                  className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-sm"
-                >
-                  <div className="flex-1">
-                    <span className="font-medium text-slate-800">{s.name}</span>
-                    <div className="flex gap-2 mt-1">
-                      <span className="badge bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {s.duration} Dk
+              {Array.isArray(services) &&
+                services.map((s) => (
+                  <div
+                    key={s._id}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-sm"
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-slate-800">
+                        {s.name}
                       </span>
-                      {s.price && (
-                        <span className="badge bg-green-50 text-green-700 border border-green-100">
-                          {s.price} TL
+                      <div className="flex gap-2 mt-1">
+                        <span className="badge bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          {s.duration} Dk
                         </span>
-                      )}
+                        {s.price && (
+                          <span className="badge bg-green-50 text-green-700 border border-green-100">
+                            {s.price} TL
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => handleEditService(s)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Düzenle"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(s._id, s.name)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => handleEditService(s)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Düzenle"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteService(s._id, s.name)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -858,7 +951,10 @@ const handleSaveSettings = async () => {
                   };
 
                   if (editingStaff) {
-                    await api.put(`/business/staff/${editingStaff._id}`, staffData);
+                    await api.put(
+                      `/business/staff/${editingStaff._id}`,
+                      staffData,
+                    );
                     setEditingStaff(null);
                     toast.success("Personel başarıyla güncellendi!");
                   } else {
@@ -869,7 +965,12 @@ const handleSaveSettings = async () => {
                   load();
                 } catch (err) {
                   console.error("Hata:", err);
-                  toast.error(err.response?.data?.message || (editingStaff ? "Personel güncellenirken hata oluştu." : "Personel eklenirken hata oluştu."));
+                  toast.error(
+                    err.response?.data?.message ||
+                      (editingStaff
+                        ? "Personel güncellenirken hata oluştu."
+                        : "Personel eklenirken hata oluştu."),
+                  );
                 }
               }}
             >
@@ -902,7 +1003,10 @@ const handleSaveSettings = async () => {
                   className="input flex-1"
                   defaultValue={editingStaff?.email}
                 />
-                <button type="submit" className="btn-primary whitespace-nowrap px-4">
+                <button
+                  type="submit"
+                  className="btn-primary whitespace-nowrap px-4"
+                >
                   {editingStaff ? "Güncelle" : "Ekle"}
                 </button>
                 {editingStaff && (
@@ -922,47 +1026,54 @@ const handleSaveSettings = async () => {
                   Henüz personel/bayi eklenmemiş.
                 </p>
               ) : null}
-              {Array.isArray(staff) && staff.map((s) => (
-                <div
-                  key={s._id}
-                  className={`flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-sm ${!s.is_active ? 'opacity-60' : ''}`}
-                >
-                  <div className="flex-1">
-                    <span className="font-medium text-slate-800">{s.name}</span>
-                    <div className="flex gap-2 mt-1">
-                      <span className={`badge ${s.role === 'dealer' ? 'bg-purple-50 text-purple-700 border border-purple-100' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'}`}>
-                        {s.role === 'dealer' ? 'Bayi' : 'Personel'}
+              {Array.isArray(staff) &&
+                staff.map((s) => (
+                  <div
+                    key={s._id}
+                    className={`flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-sm ${!s.is_active ? "opacity-60" : ""}`}
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-slate-800">
+                        {s.name}
                       </span>
-                      {s.phone && (
-                        <span className="badge bg-slate-100 text-slate-600 border border-slate-200">
-                          {s.phone}
+                      <div className="flex gap-2 mt-1">
+                        <span
+                          className={`badge ${s.role === "dealer" ? "bg-purple-50 text-purple-700 border border-purple-100" : "bg-indigo-50 text-indigo-700 border border-indigo-100"}`}
+                        >
+                          {s.role === "dealer" ? "Bayi" : "Personel"}
                         </span>
-                      )}
+                        {s.phone && (
+                          <span className="badge bg-slate-100 text-slate-600 border border-slate-200">
+                            {s.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => setEditingStaff(s)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Düzenle"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDeleteModal({
+                            isOpen: true,
+                            type: "staff",
+                            id: s._id,
+                            name: s.name,
+                          })
+                        }
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Sil"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => setEditingStaff(s)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Düzenle"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteModal({
-                        isOpen: true,
-                        type: 'staff',
-                        id: s._id,
-                        name: s.name
-                      })}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Sil"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -1005,7 +1116,10 @@ const handleSaveSettings = async () => {
                       <span className="text-lg">{loyaltySettings.symbol}</span>
                     </div>
                     <p className="text-xs text-amber-600 mt-1">
-                      {loyaltySettings.threshold || settings.bookingSettings?.reward_threshold || 10} puanda 1 ücretsiz hizmet!
+                      {loyaltySettings.threshold ||
+                        settings.bookingSettings?.reward_threshold ||
+                        10}{" "}
+                      puanda 1 ücretsiz hizmet!
                     </p>
                   </div>
                 </div>
@@ -1130,7 +1244,10 @@ const handleSaveSettings = async () => {
                   onSubmit={async (e) => {
                     e.preventDefault();
                     try {
-                      await api.post("/business/loyalty/settings", { reward_threshold: loyaltySettings.threshold, loyalty_symbol: loyaltySettings.symbol });
+                      await api.post("/business/loyalty/settings", {
+                        reward_threshold: loyaltySettings.threshold,
+                        loyalty_symbol: loyaltySettings.symbol,
+                      });
                       toast.success("Sadakat ayarları kaydedildi!");
                     } catch (err) {
                       toast.error("Ayarlar kaydedilemedi.");
@@ -1199,30 +1316,32 @@ const handleSaveSettings = async () => {
                     </div>
                   ) : null}
 
-                  {Array.isArray(customers) && customers.map((c) => (
-                    <div
-                      key={c._id}
-                      className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-md"
-                      onClick={() => setSelectedCustomer(c)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                          {c.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-800">
-                            {c.name}
-                          </p>
-                          <p className="text-xs text-slate-500 mb-1">
-                            {c.phone}
-                          </p>
-                          <div className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 inline-flex px-2 py-0.5 rounded-full">
-                            {c.loyalty_points || 0} {loyaltySettings.symbol} Puan
+                  {Array.isArray(customers) &&
+                    customers.map((c) => (
+                      <div
+                        key={c._id}
+                        className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-md"
+                        onClick={() => setSelectedCustomer(c)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-800">
+                              {c.name}
+                            </p>
+                            <p className="text-xs text-slate-500 mb-1">
+                              {c.phone}
+                            </p>
+                            <div className="flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 inline-flex px-2 py-0.5 rounded-full">
+                              {c.loyalty_points || 0} {loyaltySettings.symbol}{" "}
+                              Puan
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </div>
@@ -1324,84 +1443,91 @@ const handleSaveSettings = async () => {
                     </p>
                   ) : null}
 
-                  {Array.isArray(appointments) && appointments.map((a) => (
-                    <div
-                      key={a._id}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${
-                        a.status === 'blocked'
-                          ? 'bg-slate-100 border-slate-300 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#e5e7eb_10px,#e5e7eb_20px)]'
-                          : 'bg-white border-slate-200 hover:border-indigo-200'
-                      }`}
-                    >
-                      <div className="flex-1">
-                        {a.status === 'blocked' ? (
-                          <>
-                            <p className="font-bold text-slate-700 text-base">
-                              🚫 {a.note || 'Engellenmiş Zaman'}
-                            </p>
-                            <p className="text-sm text-slate-600 mt-1 flex items-center gap-1.5 font-medium">
-                              <Clock3 className="w-4 h-4 text-slate-500" />
-                              {new Date(a.starts_at).toLocaleString("tr-TR", {
-                                day: "2-digit",
-                                month: "long",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              <span className="text-slate-400">|</span>
-                              <span className="text-slate-600">
-                                {new Date(a.ends_at).toLocaleTimeString("tr-TR", {
+                  {Array.isArray(appointments) &&
+                    appointments.map((a) => (
+                      <div
+                        key={a._id}
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${
+                          a.status === "blocked"
+                            ? "bg-slate-100 border-slate-300 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#e5e7eb_10px,#e5e7eb_20px)]"
+                            : "bg-white border-slate-200 hover:border-indigo-200"
+                        }`}
+                      >
+                        <div className="flex-1">
+                          {a.status === "blocked" ? (
+                            <>
+                              <p className="font-bold text-slate-700 text-base">
+                                🚫 {a.note || "Engellenmiş Zaman"}
+                              </p>
+                              <p className="text-sm text-slate-600 mt-1 flex items-center gap-1.5 font-medium">
+                                <Clock3 className="w-4 h-4 text-slate-500" />
+                                {new Date(a.starts_at).toLocaleString("tr-TR", {
+                                  day: "2-digit",
+                                  month: "long",
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}
-                              </span>
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-bold text-slate-800 text-base">
-                              {a.customer_id?.name || "Bilinmeyen Müşteri"}
-                            </p>
-                            <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
-                              <Clock3 className="w-4 h-4 text-slate-400" />
-                              {new Date(a.starts_at).toLocaleString("tr-TR", {
-                                day: "2-digit",
-                                month: "long",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              <span className="text-slate-300">|</span>
-                              <span className="text-indigo-600">
-                                {a.service_id?.name}
-                              </span>
-                            </p>
-                          </>
-                        )}
-                      </div>
+                                <span className="text-slate-400">|</span>
+                                <span className="text-slate-600">
+                                  {new Date(a.ends_at).toLocaleTimeString(
+                                    "tr-TR",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
+                                </span>
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-bold text-slate-800 text-base">
+                                {a.customer_id?.name || "Bilinmeyen Müşteri"}
+                              </p>
+                              <p className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
+                                <Clock3 className="w-4 h-4 text-slate-400" />
+                                {new Date(a.starts_at).toLocaleString("tr-TR", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                                <span className="text-slate-300">|</span>
+                                <span className="text-indigo-600">
+                                  {a.service_id?.name}
+                                </span>
+                              </p>
+                            </>
+                          )}
+                        </div>
 
-                      <div className="flex flex-wrap items-center gap-3">
-                        <select
-                          value={a.status}
-                          onChange={async (e) => {
-                            try {
-                              await api.patch(`/business/appointments/${a._id}/status`, {
-                                status: e.target.value,
-                              });
-                              loadAppointments();
-                            } catch (err) {
-                              alert("Durum güncellenirken hata oluştu.");
-                            }
-                          }}
-                          className="input text-sm py-1.5 px-3 w-32"
-                        >
-                          <option value="pending">Beklemede</option>
-                          <option value="approved">Onaylandı</option>
-                          <option value="completed">Tamamlandı</option>
-                          <option value="cancelled">İptal</option>
-                          <option value="blocked">Kapalı</option>
-                        </select>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <select
+                            value={a.status}
+                            onChange={async (e) => {
+                              try {
+                                await api.patch(
+                                  `/business/appointments/${a._id}/status`,
+                                  {
+                                    status: e.target.value,
+                                  },
+                                );
+                                loadAppointments();
+                              } catch (err) {
+                                alert("Durum güncellenirken hata oluştu.");
+                              }
+                            }}
+                            className="input text-sm py-1.5 px-3 w-32"
+                          >
+                            <option value="pending">Beklemede</option>
+                            <option value="approved">Onaylandı</option>
+                            <option value="completed">Tamamlandı</option>
+                            <option value="cancelled">İptal</option>
+                            <option value="blocked">Kapalı</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </div>
@@ -1414,8 +1540,10 @@ const handleSaveSettings = async () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-slate-800 mb-4">Zaman Yönetimi</h3>
-              
+              <h3 className="text-xl font-bold text-slate-800 mb-4">
+                Zaman Yönetimi
+              </h3>
+
               {/* Tabs */}
               <div className="flex gap-2 mb-6">
                 <button
@@ -1444,7 +1572,10 @@ const handleSaveSettings = async () => {
               {blockTab === "weekly" && (
                 <form onSubmit={handleBlockTime} className="space-y-4">
                   {Object.entries(workingHours).map(([day, hours]) => (
-                    <div key={day} className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                    <div
+                      key={day}
+                      className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg"
+                    >
                       <div className="w-32 font-medium text-slate-700 capitalize">
                         {day === "monday" && "Pazartesi"}
                         {day === "tuesday" && "Salı"}
@@ -1519,17 +1650,23 @@ const handleSaveSettings = async () => {
               {blockTab === "custom" && (
                 <form onSubmit={handleBlockTime} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Başlangıç Tarihi</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Başlangıç Tarihi
+                    </label>
                     <input
                       type="date"
                       className="input w-full"
                       value={blockForm.date}
-                      onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, date: e.target.value })
+                      }
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Bitiş Tarihi</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Bitiş Tarihi
+                    </label>
                     <input
                       type="date"
                       className="input w-full"
@@ -1545,42 +1682,63 @@ const handleSaveSettings = async () => {
                       onChange={(e) => setIsAllDayBlock(e.target.checked)}
                       className="w-4 h-4"
                     />
-                    <label htmlFor="isAllDay" className="text-sm text-slate-600">
+                    <label
+                      htmlFor="isAllDay"
+                      className="text-sm text-slate-600"
+                    >
                       Tüm Gün Komple Kapat
                     </label>
                   </div>
                   {!isAllDayBlock && (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Başlangıç Saati</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Başlangıç Saati
+                        </label>
                         <input
                           type="time"
                           className="input w-full"
                           value={blockForm.startTime}
-                          onChange={(e) => setBlockForm({ ...blockForm, startTime: e.target.value })}
+                          onChange={(e) =>
+                            setBlockForm({
+                              ...blockForm,
+                              startTime: e.target.value,
+                            })
+                          }
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Bitiş Saati</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Bitiş Saati
+                        </label>
                         <input
                           type="time"
                           className="input w-full"
                           value={blockForm.endTime}
-                          onChange={(e) => setBlockForm({ ...blockForm, endTime: e.target.value })}
+                          onChange={(e) =>
+                            setBlockForm({
+                              ...blockForm,
+                              endTime: e.target.value,
+                            })
+                          }
                           required
                         />
                       </div>
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Engelleme Nedeni</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Engelleme Nedeni
+                    </label>
                     <input
                       type="text"
                       className="input w-full"
                       placeholder="Örn: Kişisel iş, Öğle arası uzadı"
                       value={blockForm.note}
-                      onChange={(e) => setBlockForm({ ...blockForm, note: e.target.value })}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, note: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -1589,7 +1747,12 @@ const handleSaveSettings = async () => {
                       type="button"
                       onClick={() => {
                         setShowBlockModal(false);
-                        setBlockForm({ date: "", startTime: "", endTime: "", note: "" });
+                        setBlockForm({
+                          date: "",
+                          startTime: "",
+                          endTime: "",
+                          note: "",
+                        });
                         setIsAllDayBlock(false);
                         setBlockEndDate("");
                       }}
@@ -1618,8 +1781,10 @@ const handleSaveSettings = async () => {
       {activeTab === "settings" && (
         <div className="animate-in fade-in duration-300">
           <div className="card p-6">
-            <h2 className="text-2xl font-bold text-slate-800 mb-6">İşletme Ayarları</h2>
-            
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">
+              İşletme Ayarları
+            </h2>
+
             {/* General Settings */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
@@ -1633,8 +1798,10 @@ const handleSaveSettings = async () => {
                   </label>
                   <input
                     type="text"
-                    value={settings.name || ''}
-                    onChange={(e) => setSettings(prev => ({ ...prev, name: e.target.value }))}
+                    value={settings.name || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev, name: e.target.value }))
+                    }
                     className="input w-full"
                   />
                 </div>
@@ -1644,8 +1811,13 @@ const handleSaveSettings = async () => {
                   </label>
                   <input
                     type="text"
-                    value={settings.address || ''}
-                    onChange={(e) => setSettings(prev => ({ ...prev, address: e.target.value }))}
+                    value={settings.address || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                      }))
+                    }
                     className="input w-full"
                     placeholder="Mahalle, Sokak No, Şehir"
                   />
@@ -1657,14 +1829,24 @@ const handleSaveSettings = async () => {
                   <div className="flex gap-3 items-center">
                     <input
                       type="color"
-                      value={settings.theme_color || '#3B82F6'}
-                      onChange={(e) => setSettings(prev => ({ ...prev, theme_color: e.target.value }))}
+                      value={settings.theme_color || "#3B82F6"}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          theme_color: e.target.value,
+                        }))
+                      }
                       className="w-16 h-10 rounded cursor-pointer"
                     />
                     <input
                       type="text"
-                      value={settings.theme_color || '#3B82F6'}
-                      onChange={(e) => setSettings(prev => ({ ...prev, theme_color: e.target.value }))}
+                      value={settings.theme_color || "#3B82F6"}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          theme_color: e.target.value,
+                        }))
+                      }
                       className="input flex-1"
                     />
                   </div>
@@ -1681,21 +1863,23 @@ const handleSaveSettings = async () => {
                   />
                   {logoFile && (
                     <div className="mt-2">
-                      <img 
-                        src={URL.createObjectURL(logoFile)} 
-                        alt="Logo Preview" 
+                      <img
+                        src={URL.createObjectURL(logoFile)}
+                        alt="Logo Preview"
                         className="h-16 w-auto object-contain rounded border border-slate-200"
                       />
-                      <p className="text-xs text-slate-500 mt-1">Seçilen: {logoFile.name}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Seçilen: {logoFile.name}
+                      </p>
                     </div>
                   )}
                   {!logoFile && settings.logo_url && (
                     <div className="mt-2">
-                      <img 
-                        src={settings.logo_url} 
-                        alt="Current Logo" 
+                      <img
+                        src={settings.logo_url}
+                        alt="Current Logo"
                         className="h-16 w-auto object-contain rounded border border-slate-200"
-                        onError={(e) => e.target.style.display = 'none'}
+                        onError={(e) => (e.target.style.display = "none")}
                       />
                       <p className="text-xs text-slate-500 mt-1">Mevcut logo</p>
                     </div>
@@ -1707,37 +1891,62 @@ const handleSaveSettings = async () => {
                   </label>
                   <input
                     type="text"
-                    value={settings.map_url || ''}
-                    onChange={(e) => setSettings(prev => ({ ...prev, map_url: e.target.value }))}
+                    value={settings.map_url || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        map_url: e.target.value,
+                      }))
+                    }
                     className="input w-full"
                     placeholder="https://maps.google.com/?q=..."
                   />
-                  <p className="text-xs text-slate-500 mt-1">Müşterilerin işletmenizi haritada bulması için Google Maps linki</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Müşterilerin işletmenizi haritada bulması için Google Maps
+                    linki
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     İşletme Hakkında
                   </label>
                   <textarea
-                    value={settings.about_text || ''}
-                    onChange={(e) => setSettings(prev => ({ ...prev, about_text: e.target.value }))}
+                    value={settings.about_text || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        about_text: e.target.value,
+                      }))
+                    }
                     className="input w-full h-24 resize-none"
                     placeholder="İşletmeniz hakkında kısa bir açıklama yazın..."
                   />
-                  <p className="text-xs text-slate-500 mt-1">Müşterilerinize gösterilecek işletme açıklaması</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Müşterilerinize gösterilecek işletme açıklaması
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100 mb-6">
                 <div>
-                  <p className="font-bold text-amber-900">Sadakat Sistemi (Loyalty)</p>
-                  <p className="text-sm text-amber-700">Müşterilere puan ve indirim kodu (Örn: NXA-WIN) sistemini aktif et</p>
+                  <p className="font-bold text-amber-900">
+                    Sadakat Sistemi (Loyalty)
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    Müşterilere puan ve indirim kodu (Örn: NXA-WIN) sistemini
+                    aktif et
+                  </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={settings.is_loyalty_enabled ?? true}
-                    onChange={(e) => setSettings(prev => ({ ...prev, is_loyalty_enabled: e.target.checked }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        is_loyalty_enabled: e.target.checked,
+                      }))
+                    }
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
@@ -1759,14 +1968,21 @@ const handleSaveSettings = async () => {
                   <input
                     type="number"
                     value={settings.bookingSettings?.bufferTime || 10}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingSettings: { ...prev.bookingSettings, bufferTime: Number(e.target.value) }
-                    }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        bookingSettings: {
+                          ...prev.bookingSettings,
+                          bufferTime: Number(e.target.value),
+                        },
+                      }))
+                    }
                     className="input w-full"
                     min="0"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Randevular arası minimum bekleme süresi</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Randevular arası minimum bekleme süresi
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1775,14 +1991,21 @@ const handleSaveSettings = async () => {
                   <input
                     type="number"
                     value={settings.bookingSettings?.maxConcurrent || 1}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingSettings: { ...prev.bookingSettings, maxConcurrent: Number(e.target.value) }
-                    }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        bookingSettings: {
+                          ...prev.bookingSettings,
+                          maxConcurrent: Number(e.target.value),
+                        },
+                      }))
+                    }
                     className="input w-full"
                     min="1"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Aynı saatte alınabilecek max randevu sayısı</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Aynı saatte alınabilecek max randevu sayısı
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1791,15 +2014,22 @@ const handleSaveSettings = async () => {
                   <input
                     type="number"
                     value={settings.bookingSettings?.slotInterval || 30}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingSettings: { ...prev.bookingSettings, slotInterval: Number(e.target.value) }
-                    }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        bookingSettings: {
+                          ...prev.bookingSettings,
+                          slotInterval: Number(e.target.value),
+                        },
+                      }))
+                    }
                     className="input w-full"
                     min="5"
                     step="5"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Takvimde saatlerin kaçar dakika arayla bölüneceği</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Takvimde saatlerin kaçar dakika arayla bölüneceği
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1808,27 +2038,45 @@ const handleSaveSettings = async () => {
                   <input
                     type="number"
                     value={settings.bookingSettings?.cancellationBuffer || 120}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingSettings: { ...prev.bookingSettings, cancellationBuffer: Number(e.target.value) }
-                    }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        bookingSettings: {
+                          ...prev.bookingSettings,
+                          cancellationBuffer: Number(e.target.value),
+                        },
+                      }))
+                    }
                     className="input w-full"
                     min="0"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Randevu öncesi kaç dakikaya kadar iptal edilebilir</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Randevu öncesi kaç dakikaya kadar iptal edilebilir
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div>
-                  <p className="font-bold text-blue-900">Otomatik Randevu Onayı</p>
-                  <p className="text-sm text-blue-700">Müşteriler web üzerinden randevu aldığında otomatik olarak onaylanır. Kapatırsanız randevular 'Bekliyor' statüsünde düşer ve manuel onaylamanız gerekir.</p>
+                  <p className="font-bold text-blue-900">
+                    Otomatik Randevu Onayı
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Müşteriler web üzerinden randevu aldığında otomatik olarak
+                    onaylanır. Kapatırsanız randevular 'Bekliyor' statüsünde
+                    düşer ve manuel onaylamanız gerekir.
+                  </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={settings.auto_approve_appointments ?? true}
-                    onChange={(e) => setSettings(prev => ({ ...prev, auto_approve_appointments: e.target.checked }))}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        auto_approve_appointments: e.target.checked,
+                      }))
+                    }
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-blue-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -1845,17 +2093,26 @@ const handleSaveSettings = async () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-slate-800">WhatsApp Entegrasyonu</p>
-                    <p className="text-sm text-slate-600">Müşterilere WhatsApp üzerinden bildirim gönder</p>
+                    <p className="font-medium text-slate-800">
+                      WhatsApp Entegrasyonu
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      Müşterilere WhatsApp üzerinden bildirim gönder
+                    </p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={settings.integrations?.whatsappEnabled ?? true}
-                      onChange={(e) => setSettings(prev => ({
-                        ...prev,
-                        integrations: { ...prev.integrations, whatsappEnabled: e.target.checked }
-                      }))}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            whatsappEnabled: e.target.checked,
+                          },
+                        }))
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -1869,7 +2126,8 @@ const handleSaveSettings = async () => {
                     WhatsApp Cloud API Entegrasyonu
                   </h4>
                   <p className="text-sm text-slate-600 mb-4">
-                    Kendi WhatsApp Business API bilgilerinizi girerek müşterilere bildirim gönderin.
+                    Kendi WhatsApp Business API bilgilerinizi girerek
+                    müşterilere bildirim gönderin.
                   </p>
                   <div className="space-y-3">
                     <div>
@@ -1879,11 +2137,18 @@ const handleSaveSettings = async () => {
                       <input
                         type="text"
                         value={settings.whatsapp_token || ""}
-                        onChange={(e) => setSettings(prev => ({ ...prev, whatsapp_token: e.target.value }))}
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            whatsapp_token: e.target.value,
+                          }))
+                        }
                         placeholder="EAAcZAfbnnF0YBR..."
                         className="input w-full"
                       />
-                      <p className="text-xs text-slate-500 mt-1">Meta Developers'dan aldığınız Access Token</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Meta Developers'dan aldığınız Access Token
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -1892,11 +2157,18 @@ const handleSaveSettings = async () => {
                       <input
                         type="text"
                         value={settings.whatsapp_phone_number_id || ""}
-                        onChange={(e) => setSettings(prev => ({ ...prev, whatsapp_phone_number_id: e.target.value }))}
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            whatsapp_phone_number_id: e.target.value,
+                          }))
+                        }
                         placeholder="1120300507841864"
                         className="input w-full"
                       />
-                      <p className="text-xs text-slate-500 mt-1">WhatsApp Business Phone Number ID</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        WhatsApp Business Phone Number ID
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1907,8 +2179,12 @@ const handleSaveSettings = async () => {
                         <Globe className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-800">Google Takvim & Meet</p>
-                        <p className="text-sm text-slate-600">Otomatik Google Meet linki oluşturma</p>
+                        <p className="font-semibold text-slate-800">
+                          Google Takvim & Meet
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          Otomatik Google Meet linki oluşturma
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1917,19 +2193,25 @@ const handleSaveSettings = async () => {
                     <div className="bg-white rounded-lg p-3 border border-green-200">
                       <div className="flex items-center gap-2 text-green-700">
                         <CheckCircle className="w-5 h-5" />
-                        <span className="font-semibold">✅ Google Hesabınız Bağlı</span>
+                        <span className="font-semibold">
+                          ✅ Google Hesabınız Bağlı
+                        </span>
                       </div>
                       <p className="text-sm text-slate-600 mt-1">
-                        Sistem otomatik olarak Google Meet linkleri oluşturacak ve müşterilerinize gönderecek.
+                        Sistem otomatik olarak Google Meet linkleri oluşturacak
+                        ve müşterilerinize gönderecek.
                       </p>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => {
-                        const bizId = user?.business_id || user?._id || dash?._id;
+                        const bizId =
+                          user?.business_id || user?._id || dash?._id;
                         if (!bizId) {
-                          toast.error("İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.");
+                          toast.error(
+                            "İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.",
+                          );
                           return;
                         }
                         window.location.href = `${import.meta.env.VITE_API_URL}/calendar/auth?businessId=${bizId}`;
@@ -1944,23 +2226,34 @@ const handleSaveSettings = async () => {
                   <div className="mt-3 p-3 bg-blue-100/50 rounded-lg border border-blue-200">
                     <p className="text-xs text-blue-800 flex items-start gap-2">
                       <span className="text-sm">💡</span>
-                      <span>Standart takvim senkronizasyonu tüm paketlerde açıktır. Otomatik Google Meet linki oluşturma özelliği ise Online ve Full paketlere özeldir.</span>
+                      <span>
+                        Standart takvim senkronizasyonu tüm paketlerde açıktır.
+                        Otomatik Google Meet linki oluşturma özelliği ise Online
+                        ve Full paketlere özeldir.
+                      </span>
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                   <div>
                     <p className="font-medium text-slate-800">Apple Calendar</p>
-                    <p className="text-sm text-slate-600">Randevuları Apple Calendar ile senkronize et</p>
+                    <p className="text-sm text-slate-600">
+                      Randevuları Apple Calendar ile senkronize et
+                    </p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={settings.integrations?.appleCalendar ?? false}
-                      onChange={(e) => setSettings(prev => ({
-                        ...prev,
-                        integrations: { ...prev.integrations, appleCalendar: e.target.checked }
-                      }))}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          integrations: {
+                            ...prev.integrations,
+                            appleCalendar: e.target.checked,
+                          },
+                        }))
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
@@ -1977,7 +2270,8 @@ const handleSaveSettings = async () => {
               </h3>
               <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                 <p className="text-sm text-slate-700 mb-3">
-                  İşletmenizin tüm randevularını Apple Calendar, Google Calendar veya Outlook ile senkronize etmek için bu linki kullanın.
+                  İşletmenizin tüm randevularını Apple Calendar, Google Calendar
+                  veya Outlook ile senkronize etmek için bu linki kullanın.
                 </p>
                 <div className="flex gap-3">
                   <input
@@ -1989,7 +2283,9 @@ const handleSaveSettings = async () => {
                   <button
                     onClick={() => {
                       const businessId = user?.business_id || user?._id;
-                      navigator.clipboard.writeText(`webcal://tamvaktinde.com.tr/api/business/${businessId}/calendar.ics`);
+                      navigator.clipboard.writeText(
+                        `webcal://tamvaktinde.com.tr/api/business/${businessId}/calendar.ics`,
+                      );
                       toast.success("Link kopyalandı!");
                     }}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
@@ -1999,9 +2295,12 @@ const handleSaveSettings = async () => {
                   </button>
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  Apple Calendar: Dosya → Yeni Takvim Aboneliği → URL<br/>
-                  Google Calendar: Ayarlar → URL ile Takvim Ekle<br/>
-                  Outlook: Takvim → Takvim Ekle → Abonelikten<br/>
+                  Apple Calendar: Dosya → Yeni Takvim Aboneliği → URL
+                  <br />
+                  Google Calendar: Ayarlar → URL ile Takvim Ekle
+                  <br />
+                  Outlook: Takvim → Takvim Ekle → Abonelikten
+                  <br />
                 </p>
               </div>
             </div>
@@ -2037,15 +2336,20 @@ const handleSaveSettings = async () => {
                 </h3>
               </div>
               <p className="text-slate-600 mb-6 max-w-2xl">
-                Yapay zeka ile saniyeler içinde hedef kitlenize özel WhatsApp kampanya fikirleri üretin ve müşterilerinize anında gönderin.
+                Yapay zeka ile saniyeler içinde hedef kitlenize özel WhatsApp
+                kampanya fikirleri üretin ve müşterilerinize anında gönderin.
               </p>
 
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-4 py-2">
                   <span className="text-2xl">🪙</span>
                   <div>
-                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Kalan Kredi</p>
-                    <p className="text-lg font-bold text-amber-800">{Math.max(0, creditsRemaining)}</p>
+                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                      Kalan Kredi
+                    </p>
+                    <p className="text-lg font-bold text-amber-800">
+                      {Math.max(0, creditsRemaining)}
+                    </p>
                   </div>
                 </div>
                 {Math.max(0, creditsRemaining) <= 0 && (
@@ -2088,15 +2392,21 @@ const handleSaveSettings = async () => {
                     />
                   </div>
                   <div className="relative">
-                    <select 
+                    <select
                       className="w-full pl-4 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent transition-all outline-none text-slate-600 appearance-none"
                       value={segment}
                       onChange={(e) => setSegment(e.target.value)}
                     >
                       <option value="all">Tüm Müşteriler</option>
-                      <option value="inactive_1_week">Son 1 Haftadır Gelmeyenler</option>
-                      <option value="inactive_1_month">Son 1 Aydır Gelmeyenler</option>
-                      <option value="loyal">Sadık (Çok Gelen) Müşteriler</option>
+                      <option value="inactive_1_week">
+                        Son 1 Haftadır Gelmeyenler
+                      </option>
+                      <option value="inactive_1_month">
+                        Son 1 Aydır Gelmeyenler
+                      </option>
+                      <option value="loyal">
+                        Sadık (Çok Gelen) Müşteriler
+                      </option>
                     </select>
                   </div>
                   <div className="relative">
@@ -2111,7 +2421,12 @@ const handleSaveSettings = async () => {
                 </div>
                 <div className="mt-4 flex justify-end">
                   <button
-                    disabled={isGenerating || !sector || !city || Math.max(0, creditsRemaining) <= 0}
+                    disabled={
+                      isGenerating ||
+                      !sector ||
+                      !city ||
+                      Math.max(0, creditsRemaining) <= 0
+                    }
                     onClick={async () => {
                       if (!sector || !city) {
                         toast.error("Lütfen sektör ve şehir giriniz.");
@@ -2126,12 +2441,25 @@ const handleSaveSettings = async () => {
                           segment,
                           duration,
                         });
-                        setCampaigns(data.content || { whatsapp: "", instagram: "", facebook: "" });
-                        setCreditsRemaining(data.creditsRemaining || creditsRemaining - 1);
-                        toast.success("Kampanya içerikleri başarıyla üretildi!");
+                        setCampaigns(
+                          data.content || {
+                            whatsapp: "",
+                            instagram: "",
+                            facebook: "",
+                          },
+                        );
+                        setCreditsRemaining(
+                          data.creditsRemaining || creditsRemaining - 1,
+                        );
+                        toast.success(
+                          "Kampanya içerikleri başarıyla üretildi!",
+                        );
                       } catch (err) {
                         if (err.response?.status === 402) {
-                          toast.error(err.response?.data?.message || "Krediniz bitti, lütfen paket yükseltin");
+                          toast.error(
+                            err.response?.data?.message ||
+                              "Krediniz bitti, lütfen paket yükseltin",
+                          );
                         } else {
                           toast.error("Kampanya oluşturulurken hata oluştu.");
                         }
@@ -2158,13 +2486,16 @@ const handleSaveSettings = async () => {
             </div>
           </div>
 
-          {campaigns && (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
+          {campaigns &&
+          (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
               <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="w-5 h-5 text-fuchsia-500" />
-                <h3 className="text-lg font-semibold text-slate-800">AI Üretilen Kampanya İçerikleri</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  AI Üretilen Kampanya İçerikleri
+                </h3>
               </div>
-              
+
               {/* Platform Tabs */}
               <div className="flex gap-2 mb-6">
                 <button
@@ -2203,20 +2534,32 @@ const handleSaveSettings = async () => {
               <div className="bg-slate-50 rounded-xl p-4 min-h-[120px] mb-4">
                 {activePlatformTab === "whatsapp" && (
                   <div>
-                    <p className="text-sm font-medium text-slate-700 mb-2">WhatsApp Mesajı (max 160 karakter)</p>
-                    <p className="text-slate-800 whitespace-pre-wrap">{campaigns.whatsapp || "Henüz içerik üretilmedi"}</p>
+                    <p className="text-sm font-medium text-slate-700 mb-2">
+                      WhatsApp Mesajı (max 160 karakter)
+                    </p>
+                    <p className="text-slate-800 whitespace-pre-wrap">
+                      {campaigns.whatsapp || "Henüz içerik üretilmedi"}
+                    </p>
                   </div>
                 )}
                 {activePlatformTab === "instagram" && (
                   <div>
-                    <p className="text-sm font-medium text-slate-700 mb-2">Instagram Gönderi Metni (hashtagler dahil)</p>
-                    <p className="text-slate-800 whitespace-pre-wrap">{campaigns.instagram || "Henüz içerik üretilmedi"}</p>
+                    <p className="text-sm font-medium text-slate-700 mb-2">
+                      Instagram Gönderi Metni (hashtagler dahil)
+                    </p>
+                    <p className="text-slate-800 whitespace-pre-wrap">
+                      {campaigns.instagram || "Henüz içerik üretilmedi"}
+                    </p>
                   </div>
                 )}
                 {activePlatformTab === "facebook" && (
                   <div>
-                    <p className="text-sm font-medium text-slate-700 mb-2">Facebook Duyuru Metni</p>
-                    <p className="text-slate-800 whitespace-pre-wrap">{campaigns.facebook || "Henüz içerik üretilmedi"}</p>
+                    <p className="text-sm font-medium text-slate-700 mb-2">
+                      Facebook Duyuru Metni
+                    </p>
+                    <p className="text-slate-800 whitespace-pre-wrap">
+                      {campaigns.facebook || "Henüz içerik üretilmedi"}
+                    </p>
                   </div>
                 )}
               </div>
@@ -2244,7 +2587,8 @@ const handleSaveSettings = async () => {
                 Henüz kampanya fikri üretilmedi
               </h4>
               <p className="text-slate-500 max-w-md mx-auto">
-                Yukarıdaki formu doldurarak yapay zeka ile hedef kitlenize özel WhatsApp kampanya fikirleri üretin.
+                Yukarıdaki formu doldurarak yapay zeka ile hedef kitlenize özel
+                WhatsApp kampanya fikirleri üretin.
               </p>
             </div>
           )}
@@ -2275,7 +2619,8 @@ const handleSaveSettings = async () => {
                 </h3>
               </div>
               <p className="text-slate-600 mb-6 max-w-2xl">
-                Yapay zeka ile kampanyalarınız için profesyonel görseller saniyeler içinde üretin.
+                Yapay zeka ile kampanyalarınız için profesyonel görseller
+                saniyeler içinde üretin.
               </p>
 
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-violet-100">
@@ -2296,7 +2641,9 @@ const handleSaveSettings = async () => {
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">⬜</div>
-                        <div className="text-xs font-semibold">Instagram Post</div>
+                        <div className="text-xs font-semibold">
+                          Instagram Post
+                        </div>
                         <div className="text-xs text-slate-500">1:1 Kare</div>
                       </div>
                     </button>
@@ -2312,7 +2659,9 @@ const handleSaveSettings = async () => {
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">📱</div>
-                        <div className="text-xs font-semibold">Instagram Hikaye</div>
+                        <div className="text-xs font-semibold">
+                          Instagram Hikaye
+                        </div>
                         <div className="text-xs text-slate-500">9:16 Dikey</div>
                       </div>
                     </button>
@@ -2328,7 +2677,9 @@ const handleSaveSettings = async () => {
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">🖼️</div>
-                        <div className="text-xs font-semibold">Afiş / Banner</div>
+                        <div className="text-xs font-semibold">
+                          Afiş / Banner
+                        </div>
                         <div className="text-xs text-slate-500">16:9 Yatay</div>
                       </div>
                     </button>
@@ -2352,8 +2703,12 @@ const handleSaveSettings = async () => {
                   <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-4 py-2">
                     <span className="text-2xl">🪙</span>
                     <div>
-                      <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Kalan Kredi</p>
-                      <p className="text-lg font-bold text-amber-800">{Math.max(0, creditsRemaining)}</p>
+                      <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                        Kalan Kredi
+                      </p>
+                      <p className="text-lg font-bold text-amber-800">
+                        {Math.max(0, creditsRemaining)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -2388,7 +2743,9 @@ const handleSaveSettings = async () => {
                 <div className="mt-6 bg-white rounded-2xl p-6 shadow-lg border border-violet-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-2 mb-4">
                     <Sparkles className="w-5 h-5 text-violet-500" />
-                    <h4 className="text-lg font-semibold text-slate-800">Üretilen Görsel</h4>
+                    <h4 className="text-lg font-semibold text-slate-800">
+                      Üretilen Görsel
+                    </h4>
                   </div>
                   <div className="relative rounded-xl overflow-hidden border border-slate-200">
                     <img
@@ -2419,10 +2776,12 @@ const handleSaveSettings = async () => {
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, type: null, id: null, name: "" })}
+        onClose={() =>
+          setDeleteModal({ isOpen: false, type: null, id: null, name: "" })
+        }
         onConfirm={confirmDelete}
-        title={deleteModal.type === 'service' ? 'Hizmeti Sil' : 'Personeli Sil'}
-        message={`${deleteModal.type === 'service' ? 'Bu hizmeti' : 'Bu personeli'} silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
+        title={deleteModal.type === "service" ? "Hizmeti Sil" : "Personeli Sil"}
+        message={`${deleteModal.type === "service" ? "Bu hizmeti" : "Bu personeli"} silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
         confirmText="Sil"
         cancelText="İptal"
       />
@@ -2448,13 +2807,19 @@ const handleSaveSettings = async () => {
                 is_online: serviceForm.is_online,
               };
 
-              await api.put(`/business/services/${editingService._id}`, serviceData);
+              await api.put(
+                `/business/services/${editingService._id}`,
+                serviceData,
+              );
               toast.success("Servis başarıyla güncellendi!");
               handleCancelEdit();
               load();
             } catch (err) {
               console.error("Hata:", err);
-              toast.error(err.response?.data?.message || "Servis güncellenirken hata oluştu.");
+              toast.error(
+                err.response?.data?.message ||
+                  "Servis güncellenirken hata oluştu.",
+              );
             } finally {
               setIsSubmittingService(false);
             }
@@ -2462,80 +2827,129 @@ const handleSaveSettings = async () => {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Servis Adı</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Servis Adı
+            </label>
             <input
               type="text"
               value={serviceForm.name}
-              onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+              onChange={(e) =>
+                setServiceForm({ ...serviceForm, name: e.target.value })
+              }
               className="input w-full"
               required
             />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Süre (Dk)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Süre (Dk)
+              </label>
               <input
                 type="number"
                 value={serviceForm.duration}
-                onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
+                onChange={(e) =>
+                  setServiceForm({ ...serviceForm, duration: e.target.value })
+                }
                 className="input w-full"
                 required
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Fiyat (TL)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Fiyat (TL)
+              </label>
               <input
                 type="number"
                 value={serviceForm.price}
-                onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+                onChange={(e) =>
+                  setServiceForm({ ...serviceForm, price: e.target.value })
+                }
                 className="input w-full"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Hizmet Açıklaması</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Hizmet Açıklaması
+            </label>
             <textarea
               value={serviceForm.description}
-              onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+              onChange={(e) =>
+                setServiceForm({ ...serviceForm, description: e.target.value })
+              }
               className="input w-full h-20 resize-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kritik Noktalar</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Kritik Noktalar
+            </label>
             <textarea
               value={serviceForm.critical_points}
-              onChange={(e) => setServiceForm({ ...serviceForm, critical_points: e.target.value })}
+              onChange={(e) =>
+                setServiceForm({
+                  ...serviceForm,
+                  critical_points: e.target.value,
+                })
+              }
               className="input w-full h-20 resize-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">İşlem Süreçleri</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              İşlem Süreçleri
+            </label>
             <textarea
               value={serviceForm.process_steps}
-              onChange={(e) => setServiceForm({ ...serviceForm, process_steps: e.target.value })}
+              onChange={(e) =>
+                setServiceForm({
+                  ...serviceForm,
+                  process_steps: e.target.value,
+                })
+              }
               className="input w-full h-20 resize-none"
             />
           </div>
           {(() => {
-            const canUseOnline = dash?.plan === 'full' || dash?.plan === 'online' || dash?.extraFeatures?.onlineUnlocked;
+            const canUseOnline =
+              dash?.plan === "full" ||
+              dash?.plan === "online" ||
+              dash?.extraFeatures?.onlineUnlocked;
             return (
-              <div className={`flex items-center gap-3 p-4 rounded-lg border ${canUseOnline ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div
+                className={`flex items-center gap-3 p-4 rounded-lg border ${canUseOnline ? "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200" : "bg-slate-50 border-slate-200 opacity-60"}`}
+              >
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     checked={serviceForm.is_online}
-                    onChange={(e) => setServiceForm({ ...serviceForm, is_online: e.target.checked })}
+                    onChange={(e) =>
+                      setServiceForm({
+                        ...serviceForm,
+                        is_online: e.target.checked,
+                      })
+                    }
                     className="sr-only peer"
                     disabled={!canUseOnline}
                   />
-                  <div className={`w-11 h-6 ${canUseOnline ? 'bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300' : 'bg-slate-300'} rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${canUseOnline ? 'peer-checked:bg-indigo-600' : 'peer-checked:bg-slate-400'}`}></div>
+                  <div
+                    className={`w-11 h-6 ${canUseOnline ? "bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300" : "bg-slate-300"} rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${canUseOnline ? "peer-checked:bg-indigo-600" : "peer-checked:bg-slate-400"}`}
+                  ></div>
                 </label>
                 <div className="flex-1">
                   <p className="font-semibold text-slate-800 flex items-center gap-2">
                     🌐 Online Görüşme (Google Meet)
-                    {!canUseOnline && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">🔒 Premium</span>}
+                    {!canUseOnline && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
+                        🔒 Premium
+                      </span>
+                    )}
                   </p>
-                  <p className="text-sm text-slate-600">Bu hizmet seçildiğinde müşteriye otomatik Google Meet linki gönderilir.</p>
+                  <p className="text-sm text-slate-600">
+                    Bu hizmet seçildiğinde müşteriye otomatik Google Meet linki
+                    gönderilir.
+                  </p>
                 </div>
                 {!canUseOnline && (
                   <button
@@ -2545,7 +2959,9 @@ const handleSaveSettings = async () => {
                       if (bizId) {
                         window.location.href = `https://nxa.com.tr/checkout?biz_id=${bizId}&type=upgrade`;
                       } else {
-                        toast.error('İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.');
+                        toast.error(
+                          "İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.",
+                        );
                       }
                     }}
                     className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
@@ -2576,28 +2992,41 @@ const handleSaveSettings = async () => {
       </Modal>
 
       {/* Campaign Edit Modal */}
-      <Modal isOpen={!!selectedCampaign} onClose={() => setSelectedCampaign(null)} title="Kampanyayı Düzenle ve Gönder">
+      <Modal
+        isOpen={!!selectedCampaign}
+        onClose={() => setSelectedCampaign(null)}
+        title="Kampanyayı Düzenle ve Gönder"
+      >
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">Müşterilerinize gidecek mesajı göndermeden önce kişiselleştirebilirsiniz.</p>
-          <textarea 
-            value={customMessage} 
+          <p className="text-sm text-slate-500">
+            Müşterilerinize gidecek mesajı göndermeden önce
+            kişiselleştirebilirsiniz.
+          </p>
+          <textarea
+            value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-fuchsia-500 outline-none resize-none text-sm"
           />
           <div className="flex justify-end gap-3 pt-4">
-            <button onClick={() => setSelectedCampaign(null)} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+            <button
+              onClick={() => setSelectedCampaign(null)}
+              className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
               İptal
             </button>
-            <button 
+            <button
               onClick={async () => {
                 try {
-                  await api.post("/business/campaign/send", { campaignText: customMessage, segment });
+                  await api.post("/business/campaign/send", {
+                    campaignText: customMessage,
+                    segment,
+                  });
                   toast.success("Kampanya mesajları başarıyla gönderiliyor!");
                   setSelectedCampaign(null);
                 } catch (error) {
                   toast.error("Gönderim sırasında hata oluştu.");
                 }
-              }} 
+              }}
               className="px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-md transition-all"
             >
               🚀 Şimdi Gönder
