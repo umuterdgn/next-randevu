@@ -101,7 +101,6 @@ export default function BusinessPage() {
   const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
 
   // DÖNGÜYÜ KIRAN STATE BURADA
-  const [needsToApply, setNeedsToApply] = useState(false);
 
   // Randevu Filtreleri
   const [selectedDate, setSelectedDate] = useState(null);
@@ -283,12 +282,12 @@ export default function BusinessPage() {
       }
     } catch (error) {
       console.error("Load error:", error);
-      // DÖNGÜYÜ KIRAN YER BURASI: navigate yerine state'i true yapıyoruz
+      // Artık döngü tehlikesi yok, direkt apply sayfasına uçuruyoruz!
       if (
         error.response?.data?.require_apply ||
         error.response?.status === 404
       ) {
-        setNeedsToApply(true);
+        navigate("/apply");
         return;
       }
       toast.error(
@@ -566,30 +565,6 @@ export default function BusinessPage() {
   // ==========================================
   // İŞLETME KURULU DEĞİLSE GÖSTERİLECEK EKRAN
   // ==========================================
-  if (needsToApply) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-500">
-          <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
-            <span className="text-4xl">🏢</span>
-          </div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-3">
-            İşletmeniz Henüz Kurulmamış
-          </h2>
-          <p className="text-slate-600 mb-8 max-w-md mx-auto">
-            Sistemi kullanmaya başlamak için öncelikle işletme profilinizi
-            (isim, sektör vb.) oluşturmanız gerekiyor.
-          </p>
-          <button
-            onClick={() => navigate("/apply")}
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all hover:-translate-y-1"
-          >
-            Hemen İşletmemi Oluştur 🚀
-          </button>
-        </div>
-      </AppLayout>
-    );
-  }
 
   // ==========================================
   // NORMAL İŞLETME EKRANI
