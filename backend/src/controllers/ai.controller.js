@@ -125,7 +125,7 @@ export const generateImageController = async (req, res) => {
 
   try {
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-2",
       prompt: enhancedPrompt,
       n: 1,
       size: size,
