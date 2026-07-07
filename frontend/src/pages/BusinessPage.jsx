@@ -282,18 +282,21 @@ export default function BusinessPage() {
       }
     } catch (error) {
       console.error("Load error:", error);
-      // Artık döngü tehlikesi yok, direkt apply sayfasına uçuruyoruz!
-      if (
-        error.response?.data?.require_apply ||
-        error.response?.status === 404
-      ) {
-        navigate("/apply");
+      
+      // HAYALET ID TESPİTİ! Tarayıcıdaki sahte ID'yi temizleyip Apply sayfasına tam geçiş veriyoruz.
+      if (error.response?.data?.require_apply || error.response?.status === 404) {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        storedUser.business_id = "pending"; // Hayalet ID'yi ezip pending yapıyoruz
+        localStorage.setItem("user", JSON.stringify(storedUser));
+        
+        // Sayfayı tamamen tazeleyerek apply sayfasına uçuruyoruz
+        window.location.href = "/apply";
         return;
       }
-      toast.error(
-        error.response?.data?.message || "Veriler yüklenirken hata oluştu.",
-      );
+      
+      toast.error(error.response?.data?.message || "Veriler yüklenirken hata oluştu.");
     }
+  }
   };
 
   const loadAppointments = async () => {
