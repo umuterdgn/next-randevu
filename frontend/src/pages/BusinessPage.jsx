@@ -2623,16 +2623,7 @@ export default function BusinessPage() {
 
           {/* AI GÖRSEL STÜDYOSU */}
           <div className="card overflow-hidden relative bg-gradient-to-br from-violet-50 via-white to-indigo-50">
-            {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
-              <Lock className="w-16 h-16 text-violet-600 mb-4" />
-              <h3 className="text-3xl font-bold bg-gradient-to-r from-violet-700 to-indigo-700 bg-clip-text text-transparent mb-2">
-                Çok Yakında (Coming Soon)
-              </h3>
-              <p className="text-slate-600 text-lg text-center max-w-md">
-                Yapay Zeka asistanımızla tanışmaya hazır olun!
-              </p>
-            </div>
+           
 
             <div className="absolute top-0 right-0 p-6 opacity-5">
               <Sparkles className="w-32 h-32 text-violet-600" />
