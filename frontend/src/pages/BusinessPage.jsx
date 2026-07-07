@@ -2623,8 +2623,6 @@ export default function BusinessPage() {
 
           {/* AI GÖRSEL STÜDYOSU */}
           <div className="card overflow-hidden relative bg-gradient-to-br from-violet-50 via-white to-indigo-50">
-           
-
             <div className="absolute top-0 right-0 p-6 opacity-5">
               <Sparkles className="w-32 h-32 text-violet-600" />
             </div>
