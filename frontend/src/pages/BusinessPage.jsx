@@ -2441,6 +2441,25 @@ export default function BusinessPage() {
                           segment,
                           duration,
                         });
+
+                        // Veri 'content' içinde, 'data' içinde veya direkt kök dizinde olabilir. Hepsini kontrol et!
+                        const campaignPayload =
+                          data.content || data.data || data;
+
+                        setCampaigns({
+                          whatsapp: campaignPayload.whatsapp || "",
+                          instagram: campaignPayload.instagram || "",
+                          facebook: campaignPayload.facebook || "",
+                        });
+
+                        setCreditsRemaining(
+                          data.creditsRemaining !== undefined
+                            ? data.creditsRemaining
+                            : creditsRemaining - 1,
+                        );
+                        toast.success(
+                          "Kampanya içerikleri başarıyla üretildi!",
+                        );
                         setCampaigns(
                           data.content || {
                             whatsapp: "",
