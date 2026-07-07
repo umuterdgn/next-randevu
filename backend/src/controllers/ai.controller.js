@@ -129,7 +129,7 @@ export const generateImageController = async (req, res) => {
       prompt: enhancedPrompt,
       n: 1,
       size: size,
-      quality: "standard",
+      quality: "auto",
     });
 
     const imageUrl = response.data[0].url;
