@@ -100,6 +100,9 @@ export default function BusinessPage() {
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
 
+  // DÖNGÜYÜ KIRAN STATE BURADA
+  const [needsToApply, setNeedsToApply] = useState(false);
+
   // Randevu Filtreleri
   const [selectedDate, setSelectedDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -280,12 +283,12 @@ export default function BusinessPage() {
       }
     } catch (error) {
       console.error("Load error:", error);
-      // Check if error requires business creation
+      // DÖNGÜYÜ KIRAN YER BURASI: navigate yerine state'i true yapıyoruz
       if (
         error.response?.data?.require_apply ||
         error.response?.status === 404
       ) {
-        navigate("/apply");
+        setNeedsToApply(true);
         return;
       }
       toast.error(
@@ -475,10 +478,8 @@ export default function BusinessPage() {
 
   const handleSaveSettings = async () => {
     try {
-      // Mevcut logoyu bir değişkende tutalım
       let currentLogoUrl = settings.logo_url;
 
-      // 1. Önce Logo Varsa Onu Yükle
       if (logoFile) {
         const formData = new FormData();
         formData.append("logo", logoFile);
@@ -486,7 +487,6 @@ export default function BusinessPage() {
         const logoResponse = await api.patch("/business/logo", formData);
 
         if (logoResponse.data.success) {
-          // Yeni yüklenen logonun linkini değişkene al
           currentLogoUrl = logoResponse.data.data.logo_url;
 
           setSettings((prev) => ({ ...prev, logo_url: currentLogoUrl }));
@@ -495,12 +495,11 @@ export default function BusinessPage() {
         }
       }
 
-      // 2. Sonra Diğer Ayarları Kaydet (Eski state yerine güncel değişkeni gönderiyoruz!)
       const response = await api.put("/business/settings", {
         name: settings.name,
         address: settings.address,
         theme_color: settings.theme_color,
-        logo_url: currentLogoUrl, // İŞTE BÜTÜN DÜĞÜMÜ ÇÖZEN SATIR
+        logo_url: currentLogoUrl,
         map_url: settings.map_url,
         about_text: settings.about_text,
         is_loyalty_enabled: settings.is_loyalty_enabled,
@@ -524,6 +523,7 @@ export default function BusinessPage() {
       toast.error("Ayarlar güncellenirken hata oluştu");
     }
   };
+
   const handleBuyCredit = async () => {
     const loadingToast = toast.loading("Ödeme sayfasına yönlendiriliyor...");
     try {
@@ -563,6 +563,37 @@ export default function BusinessPage() {
     count: item.count,
   }));
 
+  // ==========================================
+  // İŞLETME KURULU DEĞİLSE GÖSTERİLECEK EKRAN
+  // ==========================================
+  if (needsToApply) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-500">
+          <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+            <span className="text-4xl">🏢</span>
+          </div>
+          <h2 className="text-3xl font-bold text-slate-800 mb-3">
+            İşletmeniz Henüz Kurulmamış
+          </h2>
+          <p className="text-slate-600 mb-8 max-w-md mx-auto">
+            Sistemi kullanmaya başlamak için öncelikle işletme profilinizi
+            (isim, sektör vb.) oluşturmanız gerekiyor.
+          </p>
+          <button
+            onClick={() => navigate("/apply")}
+            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all hover:-translate-y-1"
+          >
+            Hemen İşletmemi Oluştur 🚀
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ==========================================
+  // NORMAL İŞLETME EKRANI
+  // ==========================================
   return (
     <AppLayout>
       <div className="mb-6 flex justify-between items-end">
