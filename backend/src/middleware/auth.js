@@ -18,13 +18,10 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   try {
     decoded = verifyToken(token);
   } catch (err) {
-    // Hata detayını terminalde görmek için ekledik (Süresi mi dolmuş, şifre mi yanlış anlarız)
-    console.error("Token Doğrulama Hatası:", err.message); 
+    console.error("[AUTH ERROR] Token Doğrulama Hatası:", err.message);
     throw createError("Invalid or expired token", 401);
   }
 
-  // KRİTİK DÜZELTME: Token içindeki ID farklı bir isimle kaydedilmiş olabilir.
-  // Sırasıyla id, _id veya sub parametrelerine bakıyoruz.
   const userId = decoded.id || decoded._id || decoded.sub;
 
   if (!userId) {
@@ -32,23 +29,47 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   }
 
   const user = await User.findById(userId).lean();
-  
-  if (!user) throw createError("User not found", 401);
-  if (!user.is_active) throw createError("User is inactive", 403);
+
+  if (!user) {
+    console.error(`[401 BLOCKED] Veritabanında kullanıcı bulunamadı. ID: ${userId}`);
+    throw createError("User not found", 401);
+  }
+
+  // Eğer kullanıcı pasife alınmışsa 403 verir, logluyoruz:
+  if (!user.is_active) {
+    console.error(`[403 BLOCKED] Kullanıcı hesabı pasif (is_active: false). E-posta: ${user.email}`);
+    throw createError("User is inactive", 403);
+  }
 
   req.user = user;
   next();
 });
 
+// KRİTİK DÜZELTME BURASI: Rol kontrolünü esnetiyoruz
 export const requireRole = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
+  if (!req.user) {
+    console.error("[403 BLOCKED] req.user bulunamadı!");
     return next(createError("Forbidden", 403));
   }
+
+  // Esnek Rol Mantığı: Eğer rota 'business' istiyorsa, 'owner' ve 'business_admin' olanlar da girebilsin.
+  let allowedRoles = [...roles];
+  if (allowedRoles.includes('business')) {
+    allowedRoles.push('business_admin', 'owner');
+  }
+
+  // Yine de eşleşmiyorsa tam olarak nedenini konsola bas
+  if (!allowedRoles.includes(req.user.role)) {
+    console.error(`[403 ROLE BLOCKED] Giriş Reddedildi! Kullanıcının Rolü: ${req.user.role}, İstenen Roller: ${allowedRoles}`);
+    return next(createError("Forbidden: Yetkisiz rol", 403));
+  }
+
   return next();
 };
 
 export const requireSaasOwner = (req, _res, next) => {
   if (!req.user || req.user.role !== "owner" || req.user.business_id !== "saas_root") {
+    console.error(`[403 SAAS BLOCKED] SaaS Owner yetkisi yok. Rol: ${req.user?.role}, Business ID: ${req.user?.business_id}`);
     return next(createError("SaaS owner access required", 403));
   }
   return next();
