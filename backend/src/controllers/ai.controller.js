@@ -20,13 +20,11 @@ export const generateCampaignController = async (req, res) => {
         .json({ success: false, message: "İşletme bulunamadı" });
 
     if (business.ai_campaign_credits <= 0) {
-      return res
-        .status(402)
-        .json({
-          success: false,
-          message: "Krediniz bitmiştir. Lütfen paket yükseltin.",
-          creditsRemaining: 0,
-        });
+      return res.status(402).json({
+        success: false,
+        message: "Krediniz bitmiştir. Lütfen paket yükseltin.",
+        creditsRemaining: 0,
+      });
     }
   }
 
@@ -75,13 +73,11 @@ export const generateImageController = async (req, res) => {
         .json({ success: false, message: "İşletme bulunamadı" });
 
     if (business.ai_campaign_credits <= 0) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Yetersiz kredi. Lütfen kredi yükleyin.",
-          creditsRemaining: 0,
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Yetersiz kredi. Lütfen kredi yükleyin.",
+        creditsRemaining: 0,
+      });
     }
   }
 
@@ -130,8 +126,26 @@ export const generateImageController = async (req, res) => {
       n: 1,
       size: size,
       quality: "auto",
+      response_format: "url",
     });
+    const imageData =
+      response.data && response.data[0] ? response.data[0] : response;
+    const imageUrl =
+      imageData.url ||
+      (imageData.b64_json
+        ? `data:image/png;base64,${imageData.b64_json}`
+        : null);
 
+    // Eğer inatla görsel gelmezse sessizce 200 dönmek yerine hatayı fırlat ve logla
+    if (!imageUrl) {
+      console.error("OpenAI Gizemli Yanıt:", JSON.stringify(response));
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Görsel üretilemedi (Format uyuşmazlığı).",
+        });
+    }
     const imageUrl = response.data[0].url;
 
     if (businessId) {
