@@ -130,6 +130,8 @@ export const generateImageController = async (req, res) => {
     });
     const imageData =
       response.data && response.data[0] ? response.data[0] : response;
+
+    // Değişkeni SADECE BURADA tanımlıyoruz
     const imageUrl =
       imageData.url ||
       (imageData.b64_json
@@ -139,14 +141,13 @@ export const generateImageController = async (req, res) => {
     // Eğer inatla görsel gelmezse sessizce 200 dönmek yerine hatayı fırlat ve logla
     if (!imageUrl) {
       console.error("OpenAI Gizemli Yanıt:", JSON.stringify(response));
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Görsel üretilemedi (Format uyuşmazlığı).",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Görsel üretilemedi (Format uyuşmazlığı).",
+      });
     }
-    const imageUrl = response.data[0].url;
+
+    // ARTIK O FAZLADAN const imageUrl = ... SATIRI YOK!
 
     if (businessId) {
       await Business.updateOne(
