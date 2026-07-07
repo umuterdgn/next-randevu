@@ -100,8 +100,6 @@ export default function BusinessPage() {
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
 
-  // DÖNGÜYÜ KIRAN STATE BURADA
-
   // Randevu Filtreleri
   const [selectedDate, setSelectedDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,28 +114,28 @@ export default function BusinessPage() {
   const [creditsRemaining, setCreditsRemaining] = useState(5);
 
   // Yeni Özellik Stateleri
-  const [selectedCustomer, setSelectedCustomer] = useState(null); // Portfolyo görünümü için
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loyaltySettings, setLoyaltySettings] = useState({
     symbol: "⭐",
     threshold: 5,
-  }); // Sadakat ayarları
+  });
   const [redeemForm, setRedeemForm] = useState({
     reward_code: "",
     customer_id: "",
-  }); // Ödül kullanım formu
-  const [themeColor, setThemeColor] = useState("#3B82F6"); // Tema rengi
-  const [verifyCodes, setVerifyCodes] = useState({}); // 4 haneli kod inputlarını tutmak için
-  const [sendingCampaign, setSendingCampaign] = useState(null); // Hangi kampanya gönderiliyor
-  const [isGenerating, setIsGenerating] = useState(false); // Kampanya üretim durumu
-  const [selectedCampaign, setSelectedCampaign] = useState(null); // Düzenlenecek kampanya
-  const [customMessage, setCustomMessage] = useState(""); // Kişiselleştirilmiş mesaj
-  const [logoFile, setLogoFile] = useState(null); // Logo dosyası için state
+  });
+  const [themeColor, setThemeColor] = useState("#3B82F6");
+  const [verifyCodes, setVerifyCodes] = useState({});
+  const [sendingCampaign, setSendingCampaign] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [customMessage, setCustomMessage] = useState("");
+  const [logoFile, setLogoFile] = useState(null);
 
   // AI Visual Studio States
   const [imagePrompt, setImagePrompt] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState("");
-  const [imageFormat, setImageFormat] = useState("post"); // post, story, banner
+  const [imageFormat, setImageFormat] = useState("post");
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -171,7 +169,7 @@ export default function BusinessPage() {
     endTime: "",
     note: "",
   });
-  const [blockTab, setBlockTab] = useState("custom"); // "weekly" or "custom"
+  const [blockTab, setBlockTab] = useState("custom");
   const [workingHours, setWorkingHours] = useState({
     monday: { open: "09:00", close: "17:00", isClosed: false, breaks: [] },
     tuesday: { open: "09:00", close: "17:00", isClosed: false, breaks: [] },
@@ -187,7 +185,7 @@ export default function BusinessPage() {
   // Delete Confirmation Modal State
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
-    type: null, // 'service' or 'staff'
+    type: null,
     id: null,
     name: "",
   });
@@ -218,13 +216,12 @@ export default function BusinessPage() {
       setServices(s.data);
       setCustomers(
         c.data?.data ||
-          c.data?.customers ||
-          (Array.isArray(c.data) ? c.data : []),
+        c.data?.customers ||
+        (Array.isArray(c.data) ? c.data : []),
       );
       setAppointments(a.data);
       setStaff(st.data);
 
-      // Ayarları yeni rotadan al (settingsRes.data)
       const bData = settingsRes.data;
       if (bData) {
         setSettings((prev) => ({
@@ -252,7 +249,6 @@ export default function BusinessPage() {
           auto_approve_appointments: bData.auto_approve_appointments ?? true,
         }));
 
-        // Also update dash state with fallbacks including plan and extraFeatures
         setDash((prev) => ({
           ...prev,
           about_text: bData.about_text || "",
@@ -261,17 +257,14 @@ export default function BusinessPage() {
           extraFeatures: bData.extraFeatures || {},
         }));
 
-        // Sembolü ve sayıyı doğru çek:
         setLoyaltySettings({
           threshold: bData.reward_threshold || 10,
           symbol: bData.loyalty_symbol || "⭐",
         });
 
-        // AI kredilerini çek
         setCreditsRemaining(bData.ai_campaign_credits || 5);
       }
 
-      // Eğer seçili bir müşteri varsa, onu yeni gelen listedeki güncel haliyle güncelle
       if (selectedCustomer) {
         const updatedCustomer = c.data.find(
           (customer) => customer._id === selectedCustomer._id,
@@ -282,22 +275,18 @@ export default function BusinessPage() {
       }
     } catch (error) {
       console.error("Load error:", error);
-      
-      // HAYALET ID TESPİTİ! Tarayıcıdaki sahte ID'yi temizleyip Apply sayfasına tam geçiş veriyoruz.
+
       if (error.response?.data?.require_apply || error.response?.status === 404) {
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-        storedUser.business_id = "pending"; // Hayalet ID'yi ezip pending yapıyoruz
+        storedUser.business_id = "pending";
         localStorage.setItem("user", JSON.stringify(storedUser));
-        
-        // Sayfayı tamamen tazeleyerek apply sayfasına uçuruyoruz
         window.location.replace("/apply");
         return;
       }
-      
+
       toast.error(error.response?.data?.message || "Veriler yüklenirken hata oluştu.");
     }
-  }
-  };
+  }; // DÜZELTİLDİ: Fazladan parantezler silindi
 
   const loadAppointments = async () => {
     try {
@@ -532,7 +521,6 @@ export default function BusinessPage() {
       const response = await api.post("/payment/buy-credits");
       if (response.data.success && response.data.payment_link) {
         toast.dismiss(loadingToast);
-        // Redirect to nxa.com.tr payment page
         window.location.href = response.data.payment_link;
       }
     } catch (error) {
@@ -548,7 +536,7 @@ export default function BusinessPage() {
       await api.post("/business/redeem-reward", redeemForm);
       toast.success("Ödül başarıyla kullandırıldı ve puanlar güncellendi");
       setRedeemForm({ reward_code: "", customer_id: "" });
-      load(); // Reload to get updated customer data
+      load();
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Ödül kullanılırken hata oluştu",
@@ -565,13 +553,6 @@ export default function BusinessPage() {
     count: item.count,
   }));
 
-  // ==========================================
-  // İŞLETME KURULU DEĞİLSE GÖSTERİLECEK EKRAN
-  // ==========================================
-
-  // ==========================================
-  // NORMAL İŞLETME EKRANI
-  // ==========================================
   return (
     <AppLayout>
       <div className="mb-6 flex justify-between items-end">
@@ -585,7 +566,6 @@ export default function BusinessPage() {
         </div>
       </div>
 
-      {/* DASHBOARD SEKMESİ */}
       {activeTab === "dashboard" && (
         <div className="animate-in fade-in duration-300">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -626,7 +606,6 @@ export default function BusinessPage() {
             </div>
           </div>
 
-          {/* Share Business Link Button */}
           <div className="card w-full mb-6">
             <div className="flex items-center justify-between">
               <div>
@@ -640,7 +619,6 @@ export default function BusinessPage() {
               <button
                 onClick={async () => {
                   try {
-                    // SADECE slug'ı kontrol et, yoksa hata ver.
                     if (!dash?.slug) {
                       toast.error(
                         "İşletmenizin özel adresi (slug) henüz tanımlanmamış. Lütfen ayarlarınızı kontrol edin.",
@@ -749,7 +727,6 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* SERVİSLER SEKMESİ */}
       {activeTab === "services" && (
         <div className="animate-in fade-in duration-300">
           <div className="card flex flex-col mb-6 relative">
@@ -781,7 +758,7 @@ export default function BusinessPage() {
                   console.error("Hata:", err);
                   toast.error(
                     err.response?.data?.message ||
-                      "Servis eklenirken hata oluştu.",
+                    "Servis eklenirken hata oluştu.",
                   );
                 } finally {
                   setIsSubmittingService(false);
@@ -939,7 +916,6 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* PERSONELLER/BAYİLER SEKMESİ */}
       {activeTab === "staff" && (
         <div className="animate-in fade-in duration-300">
           <div className="card flex flex-col mb-6 relative">
@@ -976,9 +952,9 @@ export default function BusinessPage() {
                   console.error("Hata:", err);
                   toast.error(
                     err.response?.data?.message ||
-                      (editingStaff
-                        ? "Personel güncellenirken hata oluştu."
-                        : "Personel eklenirken hata oluştu."),
+                    (editingStaff
+                      ? "Personel güncellenirken hata oluştu."
+                      : "Personel eklenirken hata oluştu."),
                   );
                 }
               }}
@@ -1088,10 +1064,8 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* MÜŞTERİLER VE PORTFOLYO SEKMESİ */}
       {activeTab === "customers" && (
         <div className="animate-in fade-in duration-300">
-          {/* A - PORTFOLYO GÖRÜNÜMÜ (Müşteri Seçildiyse) */}
           {selectedCustomer ? (
             <div className="space-y-6">
               <button
@@ -1115,7 +1089,6 @@ export default function BusinessPage() {
                     </div>
                   </div>
 
-                  {/* Portfolyo Sadakat Durumu */}
                   <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center min-w-[150px]">
                     <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">
                       Sadakat Puanı
@@ -1179,9 +1152,7 @@ export default function BusinessPage() {
               </div>
             </div>
           ) : (
-            /* B - MÜŞTERİ LİSTESİ VE SADAKAT AYARLARI (Varsayılan Görünüm) */
             <div className="space-y-6">
-              {/* Ödül Kodu Kullanım Alanı */}
               <div className="card bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
                 <div className="flex items-center gap-2 mb-4">
                   <Gift className="w-5 h-5 text-emerald-600" />
@@ -1240,7 +1211,6 @@ export default function BusinessPage() {
                 </form>
               </div>
 
-              {/* Sadakat Sistemi Ayarları */}
               <div className="card bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
                 <div className="flex items-center gap-2 mb-4">
                   <Award className="w-5 h-5 text-amber-600" />
@@ -1308,7 +1278,6 @@ export default function BusinessPage() {
                 </form>
               </div>
 
-              {/* Müşteri Listesi */}
               <div className="card">
                 <h3 className="mb-4 font-semibold text-slate-700">
                   Müşteri Rehberi & Portfolyolar
@@ -1358,10 +1327,8 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* RANDEVULAR VE HIZLI MÜŞTERİ EKLEME SEKMESİ */}
       {activeTab === "appointments" && (
         <div className="animate-in fade-in duration-300">
-          {/* Üst Bar: Filtreler & Arama */}
           <div className="card mb-6">
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="flex-1 w-full">
@@ -1402,7 +1369,6 @@ export default function BusinessPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Sol Bölüm: Takvim */}
             <div className="lg:col-span-1">
               <div className="card">
                 <h3 className="mb-4 font-semibold text-slate-700">Takvim</h3>
@@ -1412,8 +1378,8 @@ export default function BusinessPage() {
                   className="w-full"
                   tileClassName={({ date, view }) =>
                     view === "month" &&
-                    selectedDate &&
-                    date.toDateString() === selectedDate.toDateString()
+                      selectedDate &&
+                      date.toDateString() === selectedDate.toDateString()
                       ? "bg-indigo-600 text-white rounded-lg"
                       : ""
                   }
@@ -1427,17 +1393,16 @@ export default function BusinessPage() {
               </div>
             </div>
 
-            {/* Sağ Bölüm: Randevu Listesi */}
             <div className="lg:col-span-2">
               <div className="card">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-semibold text-slate-700">
                     {selectedDate
                       ? `${selectedDate.toLocaleDateString("tr-TR", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })} Randevuları`
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })} Randevuları`
                       : "Tüm Randevular"}
                   </h3>
                   <span className="text-sm text-slate-500">
@@ -1456,11 +1421,10 @@ export default function BusinessPage() {
                     appointments.map((a) => (
                       <div
                         key={a._id}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${
-                          a.status === "blocked"
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${a.status === "blocked"
                             ? "bg-slate-100 border-slate-300 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#e5e7eb_10px,#e5e7eb_20px)]"
                             : "bg-white border-slate-200 hover:border-indigo-200"
-                        }`}
+                          }`}
                       >
                         <div className="flex-1">
                           {a.status === "blocked" ? (
@@ -1544,7 +1508,6 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* Block Time Modal */}
       {showBlockModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1553,31 +1516,27 @@ export default function BusinessPage() {
                 Zaman Yönetimi
               </h3>
 
-              {/* Tabs */}
               <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setBlockTab("weekly")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                    blockTab === "weekly"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${blockTab === "weekly"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   Haftalık Çalışma Saatleri
                 </button>
                 <button
                   onClick={() => setBlockTab("custom")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                    blockTab === "custom"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${blockTab === "custom"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   Özel Tarih/Saat Kapat
                 </button>
               </div>
 
-              {/* Weekly Hours Tab */}
               {blockTab === "weekly" && (
                 <form onSubmit={handleBlockTime} className="space-y-4">
                   {Object.entries(workingHours).map(([day, hours]) => (
@@ -1655,7 +1614,6 @@ export default function BusinessPage() {
                 </form>
               )}
 
-              {/* Custom Blocking Tab */}
               {blockTab === "custom" && (
                 <form onSubmit={handleBlockTime} className="space-y-4">
                   <div>
@@ -1780,13 +1738,9 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* FINANS SEKMESİ */}
       {activeTab === "finance" && <FinanceComponent />}
-
-      {/* CARI HESAPLAR SEKMESİ */}
       {activeTab === "cari" && <CariComponent />}
 
-      {/* AYARLAR SEKMESİ */}
       {activeTab === "settings" && (
         <div className="animate-in fade-in duration-300">
           <div className="card p-6">
@@ -1794,7 +1748,6 @@ export default function BusinessPage() {
               İşletme Ayarları
             </h2>
 
-            {/* General Settings */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                 <Settings className="w-5 h-5 text-blue-600" />
@@ -1936,7 +1889,7 @@ export default function BusinessPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100 mb-6">
+              <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100 mb-6 mt-6">
                 <div>
                   <p className="font-bold text-amber-900">
                     Sadakat Sistemi (Loyalty)
@@ -1963,7 +1916,6 @@ export default function BusinessPage() {
               </div>
             </div>
 
-            {/* Booking Settings */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                 <CalendarDays className="w-5 h-5 text-blue-600" />
@@ -2065,7 +2017,7 @@ export default function BusinessPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100 mt-6">
                 <div>
                   <p className="font-bold text-blue-900">
                     Otomatik Randevu Onayı
@@ -2093,7 +2045,6 @@ export default function BusinessPage() {
               </div>
             </div>
 
-            {/* Integration Settings */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                 <Mail className="w-5 h-5 text-blue-600" />
@@ -2128,7 +2079,6 @@ export default function BusinessPage() {
                   </label>
                 </div>
 
-                {/* WhatsApp Cloud API Credentials */}
                 <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                   <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
                     <span className="text-green-600">📱</span>
@@ -2181,6 +2131,7 @@ export default function BusinessPage() {
                     </div>
                   </div>
                 </div>
+
                 <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -2243,6 +2194,7 @@ export default function BusinessPage() {
                     </p>
                   </div>
                 </div>
+
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                   <div>
                     <p className="font-medium text-slate-800">Apple Calendar</p>
@@ -2271,7 +2223,6 @@ export default function BusinessPage() {
               </div>
             </div>
 
-            {/* Calendar Sync */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                 <CalendarDays className="w-5 h-5 text-blue-600" />
@@ -2314,7 +2265,6 @@ export default function BusinessPage() {
               </div>
             </div>
 
-            {/* Save Button */}
             <div className="flex justify-end">
               <button
                 onClick={handleSaveSettings}
@@ -2328,7 +2278,6 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* AI KAMPANYA SEKMESİ */}
       {activeTab === "campaigns" && (
         <div className="animate-in fade-in duration-300">
           <div className="card overflow-hidden relative mb-8 bg-gradient-to-br from-fuchsia-50 via-white to-purple-50">
@@ -2451,7 +2400,6 @@ export default function BusinessPage() {
                           duration,
                         });
 
-                        // Veri 'content' içinde, 'data' içinde veya direkt kök dizinde olabilir. Hepsini kontrol et!
                         const campaignPayload =
                           data.content || data.data || data;
 
@@ -2469,24 +2417,11 @@ export default function BusinessPage() {
                         toast.success(
                           "Kampanya içerikleri başarıyla üretildi!",
                         );
-                        setCampaigns(
-                          data.content || {
-                            whatsapp: "",
-                            instagram: "",
-                            facebook: "",
-                          },
-                        );
-                        setCreditsRemaining(
-                          data.creditsRemaining || creditsRemaining - 1,
-                        );
-                        toast.success(
-                          "Kampanya içerikleri başarıyla üretildi!",
-                        );
                       } catch (err) {
                         if (err.response?.status === 402) {
                           toast.error(
                             err.response?.data?.message ||
-                              "Krediniz bitti, lütfen paket yükseltin",
+                            "Krediniz bitti, lütfen paket yükseltin",
                           );
                         } else {
                           toast.error("Kampanya oluşturulurken hata oluştu.");
@@ -2515,8 +2450,8 @@ export default function BusinessPage() {
           </div>
 
           {campaigns &&
-          (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg">
+            (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg mb-8">
               <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="w-5 h-5 text-fuchsia-500" />
                 <h3 className="text-lg font-semibold text-slate-800">
@@ -2524,41 +2459,36 @@ export default function BusinessPage() {
                 </h3>
               </div>
 
-              {/* Platform Tabs */}
               <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setActivePlatformTab("whatsapp")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                    activePlatformTab === "whatsapp"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "whatsapp"
                       ? "bg-green-500 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   WhatsApp
                 </button>
                 <button
                   onClick={() => setActivePlatformTab("instagram")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                    activePlatformTab === "instagram"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "instagram"
                       ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   Instagram
                 </button>
                 <button
                   onClick={() => setActivePlatformTab("facebook")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                    activePlatformTab === "facebook"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "facebook"
                       ? "bg-blue-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   Facebook
                 </button>
               </div>
 
-              {/* Content Display */}
               <div className="bg-slate-50 rounded-xl p-4 min-h-[120px] mb-4">
                 {activePlatformTab === "whatsapp" && (
                   <div>
@@ -2592,7 +2522,6 @@ export default function BusinessPage() {
                 )}
               </div>
 
-              {/* Send Button */}
               <button
                 onClick={() => {
                   setSelectedCampaign(campaigns[activePlatformTab]);
@@ -2605,7 +2534,7 @@ export default function BusinessPage() {
               </button>
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 mb-8">
               <div className="flex justify-center mb-4">
                 <div className="p-4 bg-slate-100 rounded-full">
                   <Sparkles className="w-12 h-12 text-slate-400" />
@@ -2621,12 +2550,12 @@ export default function BusinessPage() {
             </div>
           )}
 
-          {/* AI GÖRSEL STÜDYOSU */}
+          {/* AI GÖRSEL STÜDYOSU - KİLİTLER KIRILMIŞ HALİ */}
           <div className="card overflow-hidden relative bg-gradient-to-br from-violet-50 via-white to-indigo-50">
             <div className="absolute top-0 right-0 p-6 opacity-5">
               <Sparkles className="w-32 h-32 text-violet-600" />
             </div>
-            <div className="relative z-10 opacity-50 pointer-events-none">
+            <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-lg">
                   <Sparkles className="w-6 h-6 text-white" />
@@ -2649,12 +2578,10 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("post")}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        imageFormat === "post"
+                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "post"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                      }`}
-                      disabled
+                        }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">⬜</div>
@@ -2667,12 +2594,10 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("story")}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        imageFormat === "story"
+                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "story"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                      }`}
-                      disabled
+                        }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">📱</div>
@@ -2685,12 +2610,10 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("banner")}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        imageFormat === "banner"
+                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "banner"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                      }`}
-                      disabled
+                        }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">🖼️</div>
@@ -2709,10 +2632,9 @@ export default function BusinessPage() {
                   </label>
                   <textarea
                     className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all outline-none resize-none"
-                    placeholder="Kampanyanız için ne tür bir görsel istiyorsunuz? Örn: Modern ışıklı bir kuaför salonu, pastel tonlarda, şık mobilyalar... Yazı eklemek istiyorsanız tırnak içinde belirtin: 'YAZA ÖZEL %20 İNDİRİM'"
+                    placeholder="Kampanyanız için ne tür bir görsel istiyorsunuz? Örn: Modern ışıklı bir kuaför salonu, pastel tonlarda... Yazı eklemek istiyorsanız tırnak içinde belirtin: 'YAZA ÖZEL %20 İNDİRİM'"
                     value={imagePrompt}
                     onChange={(e) => setImagePrompt(e.target.value)}
-                    disabled
                   />
                 </div>
 
@@ -2731,11 +2653,60 @@ export default function BusinessPage() {
                 </div>
 
                 <button
-                  disabled
+                  disabled={
+                    isGeneratingImage ||
+                    !imagePrompt ||
+                    Math.max(0, creditsRemaining) <= 0
+                  }
+                  onClick={async () => {
+                    if (!imagePrompt) {
+                      toast.error("Lütfen görsel için bir açıklama girin.");
+                      return;
+                    }
+                    setIsGeneratingImage(true);
+                    try {
+                      const { data } = await api.post("/ai/generate-image", {
+                        prompt: imagePrompt,
+                        format: imageFormat,
+                      });
+
+                      if (data.success && data.imageUrl) {
+                        setGeneratedImageUrl(data.imageUrl);
+                        setCreditsRemaining(
+                          data.remainingCredits !== undefined
+                            ? data.remainingCredits
+                            : creditsRemaining - 1,
+                        );
+                        toast.success("Görsel başarıyla üretildi!");
+                      } else {
+                        toast.error("Görsel üretilemedi.");
+                      }
+                    } catch (err) {
+                      if (
+                        err.response?.status === 403 ||
+                        err.response?.status === 402
+                      ) {
+                        toast.error("Krediniz bitti. Lütfen kredi yükleyin.");
+                      } else {
+                        toast.error("Görsel üretilirken bir hata oluştu.");
+                      }
+                    } finally {
+                      setIsGeneratingImage(false);
+                    }
+                  }}
                   className="w-full px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-200 hover:shadow-violet-300 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  Görsel Üret (1 Kredi)
+                  {isGeneratingImage ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Üretiliyor (Ort. 10-15 Sn)...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Görsel Üret (1 Kredi)
+                    </>
+                  )}
                 </button>
 
                 {Math.max(0, creditsRemaining) <= 0 && (
@@ -2747,7 +2718,6 @@ export default function BusinessPage() {
                     <button
                       onClick={handleBuyCredit}
                       className="mt-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg shadow-md transition-all flex items-center gap-2"
-                      disabled
                     >
                       <Gift className="w-4 h-4" /> Kredi Satın Al
                     </button>
@@ -2755,7 +2725,6 @@ export default function BusinessPage() {
                 )}
               </div>
 
-              {/* Generated Image Display */}
               {generatedImageUrl && (
                 <div className="mt-6 bg-white rounded-2xl p-6 shadow-lg border border-violet-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-2 mb-4">
@@ -2790,7 +2759,6 @@ export default function BusinessPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() =>
@@ -2803,7 +2771,6 @@ export default function BusinessPage() {
         cancelText="İptal"
       />
 
-      {/* Service Edit Modal */}
       <Modal
         isOpen={showServiceEditModal}
         onClose={handleCancelEdit}
@@ -2835,7 +2802,7 @@ export default function BusinessPage() {
               console.error("Hata:", err);
               toast.error(
                 err.response?.data?.message ||
-                  "Servis güncellenirken hata oluştu.",
+                "Servis güncellenirken hata oluştu.",
               );
             } finally {
               setIsSubmittingService(false);
@@ -3008,7 +2975,6 @@ export default function BusinessPage() {
         </form>
       </Modal>
 
-      {/* Campaign Edit Modal */}
       <Modal
         isOpen={!!selectedCampaign}
         onClose={() => setSelectedCampaign(null)}
