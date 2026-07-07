@@ -290,7 +290,7 @@ export default function BusinessPage() {
         localStorage.setItem("user", JSON.stringify(storedUser));
         
         // Sayfayı tamamen tazeleyerek apply sayfasına uçuruyoruz
-        window.location.href = "/apply";
+        window.location.replace("/apply");
         return;
       }
       
