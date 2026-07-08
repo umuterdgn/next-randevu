@@ -457,13 +457,29 @@ export const listStaff = async (req, res) => {
 };
 
 export const addStaff = async (req, res) => {
-  const { name, role, phone, email } = req.body;
+  const { name, role, phone, email, password, working_hours } = req.body;
+  
+  // Hash password if provided
+  let hashedPassword;
+  if (password) {
+    const bcrypt = await import("bcryptjs");
+    hashedPassword = await bcrypt.hash(password, 10);
+  } else {
+    // Generate random password if not provided
+    const crypto = await import("crypto");
+    const randomPassword = crypto.randomBytes(12).toString('hex');
+    const bcrypt = await import("bcryptjs");
+    hashedPassword = await bcrypt.hash(randomPassword, 10);
+  }
+
   const staff = await Staff.create({
     business_id: req.business_id,
     name,
     role,
     phone,
     email,
+    password: hashedPassword,
+    working_hours: working_hours || [],
   });
   await logAudit({
     business_id: req.business_id,
@@ -476,6 +492,7 @@ export const addStaff = async (req, res) => {
     user_agent: req.headers["user-agent"] || "",
     meta: { staff_id: staff._id, name, role },
   });
+  staff.password = undefined;
   res.status(201).json(staff);
 };
 
@@ -523,6 +540,107 @@ export const deleteStaff = async (req, res) => {
     meta: { staff_id: staff._id, name: staff.name },
   });
   res.json({ success: true });
+};
+
+export const getStaffAppointments = async (req, res) => {
+  try {
+    const { status, date } = req.query;
+    const staffId = req.user._id; // Staff member's ID from JWT token
+    const business_id = req.user.business_id;
+
+    const query = {
+      business_id,
+      staff_id: staffId,
+    };
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (date) {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+      query.starts_at = { $gte: startDate, $lte: endDate };
+    }
+
+    const appointments = await Appointment.find(query)
+      .populate('customer_id')
+      .populate('service_id')
+      .sort({ starts_at: 1 });
+
+    res.json(appointments);
+  } catch (error) {
+    console.error("Error fetching staff appointments:", error);
+    res.status(500).json({ error: "Failed to fetch appointments" });
+  }
+};
+
+export const getStaffPerformance = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+    const business_id = req.business_id;
+
+    const matchQuery = { business_id };
+
+    if (start_date && end_date) {
+      matchQuery.starts_at = {
+        $gte: new Date(start_date),
+        $lte: new Date(end_date),
+      };
+    }
+
+    const performance = await Appointment.aggregate([
+      { $match: { ...matchQuery, staff_id: { $ne: null }, status: "completed" } },
+      {
+        $lookup: {
+          from: "staff",
+          localField: "staff_id",
+          foreignField: "_id",
+          as: "staff",
+        },
+      },
+      { $unwind: "$staff" },
+      {
+        $group: {
+          _id: "$staff_id",
+          staff_name: { $first: "$staff.name" },
+          staff_email: { $first: "$staff.email" },
+          total_appointments: { $sum: 1 },
+        },
+      },
+      { $sort: { total_appointments: -1 } },
+    ]);
+
+    // Calculate revenue separately for each staff member using Promise.all
+    const performanceWithRevenue = await Promise.all(
+      performance.map(async (p) => {
+        const appointments = await Appointment.find({
+          business_id,
+          staff_id: p._id,
+          status: "completed",
+          ...(start_date && end_date ? {
+            starts_at: { $gte: new Date(start_date), $lte: new Date(end_date) }
+          } : {})
+        }).populate('service_id');
+
+        const revenue = appointments.reduce((sum, apt) => {
+          return sum + (apt.service_id?.price || 0);
+        }, 0);
+
+        return {
+          ...p,
+          total_revenue: revenue,
+        };
+      })
+    );
+
+    res.json(performanceWithRevenue);
+  } catch (error) {
+    console.error("Error fetching staff performance:", error);
+    res.status(500).json({ error: "Failed to fetch staff performance" });
+  }
 };
 
 export const redeemReward = async (req, res) => {

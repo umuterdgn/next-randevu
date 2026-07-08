@@ -7,6 +7,15 @@ const staffSchema = new mongoose.Schema(
     role: { type: String, enum: ["staff", "dealer"], required: true },
     phone: { type: String },
     email: { type: String },
+    password: { type: String, required: true },
+    working_hours: [
+      {
+        day: { type: String, enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], required: true },
+        start_time: { type: String, required: true }, // Format: "09:00"
+        end_time: { type: String, required: true }, // Format: "17:00"
+        is_working: { type: Boolean, default: true },
+      }
+    ],
     is_active: { type: Boolean, default: true },
   },
   { timestamps: true }

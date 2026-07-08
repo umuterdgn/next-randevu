@@ -13,6 +13,7 @@ const appointmentSchema = new mongoose.Schema(
     customer_phone: { type: String, trim: true },
     service_id: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: false },
     service_type: { type: String, trim: true },
+    staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
     starts_at: { type: Date, required: true, index: true },
     ends_at: { type: Date, required: true, index: true },
     status: {

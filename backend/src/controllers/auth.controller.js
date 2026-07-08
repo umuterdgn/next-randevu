@@ -2,6 +2,7 @@ import { loginUser } from "../services/auth.service.js";
 import { logAudit } from "../services/audit.service.js";
 import { User } from "../models/User.js";
 import { Business } from "../models/Business.js";
+import { Staff } from "../models/Staff.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
 import jwt from "jsonwebtoken";
@@ -320,6 +321,116 @@ export const ssoLogin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "SSO girişi sırasında bir hata oluştu"
+    });
+  }
+};
+
+export const staffLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "E-posta ve şifre gereklidir"
+      });
+    }
+
+    // Find staff member by email
+    const staff = await Staff.findOne({ email }).populate('business_ref');
+
+    if (!staff) {
+      return res.status(401).json({
+        success: false,
+        message: "Geçersiz e-posta veya şifre"
+      });
+    }
+
+    // Check if staff is active
+    if (!staff.is_active) {
+      return res.status(401).json({
+        success: false,
+        message: "Hesabınız devre dışı bırakılmış"
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, staff.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Geçersiz e-posta veya şifre"
+      });
+    }
+
+    // Generate JWT token
+    const tokenPayload = {
+      id: staff._id,
+      role: 'staff',
+      business_id: staff.business_id,
+    };
+
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+        issuer: process.env.JWT_ISSUER || "saas-appointments",
+        audience: process.env.JWT_AUDIENCE || "saas-appointments-client",
+        algorithm: "HS256",
+      }
+    );
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Gün
+    });
+
+    // Log audit
+    await logAudit({
+      business_id: staff.business_id,
+      user_id: staff._id,
+      action: "STAFF_LOGIN_SUCCESS",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+    });
+
+    staff.password = undefined;
+
+    res.json({
+      success: true,
+      user: {
+        _id: staff._id,
+        name: staff.name,
+        email: staff.email,
+        role: 'staff',
+        business_id: staff.business_id,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error("Staff login error:", error);
+    await logAudit({
+      business_id: "unknown",
+      action: "STAFF_LOGIN_FAILED",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 401,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+      meta: { email: req.body?.email || "" },
+    });
+
+    res.status(401).json({
+      success: false,
+      message: "Giriş başarısız"
     });
   }
 };

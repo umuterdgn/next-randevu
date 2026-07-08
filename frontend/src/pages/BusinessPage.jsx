@@ -105,6 +105,8 @@ export default function BusinessPage() {
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
   const [newServiceConsumedProducts, setNewServiceConsumedProducts] = useState([]);
+  const [staffWorkingHours, setStaffWorkingHours] = useState([]);
+  const [staffPerformance, setStaffPerformance] = useState([]);
 
   // Randevu Filtreleri
   const [selectedDate, setSelectedDate] = useState(null);
@@ -207,6 +209,7 @@ export default function BusinessPage() {
     process_steps: "",
     is_online: false,
     consumed_products: [],
+    assigned_staff: [],
   });
   const [products, setProducts] = useState([]);
 
@@ -438,6 +441,7 @@ export default function BusinessPage() {
       process_steps: service.process_steps || "",
       is_online: service.is_online || false,
       consumed_products: service.consumed_products || [],
+      assigned_staff: service.assigned_staff || [],
     });
     setEditingService(service);
     setShowServiceEditModal(true);
@@ -481,6 +485,7 @@ export default function BusinessPage() {
       process_steps: "",
       is_online: false,
       consumed_products: [],
+      assigned_staff: [],
     });
   };
 
@@ -766,6 +771,7 @@ export default function BusinessPage() {
                     process_steps: f.get("process_steps") || "",
                     is_online: f.get("is_online") === "true",
                     consumed_products: newServiceConsumedProducts,
+                    assigned_staff: [],
                   };
 
                   await api.post("/business/services", serviceData);
@@ -1006,11 +1012,21 @@ export default function BusinessPage() {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
                 try {
+                  // Build working hours array
+                  const working_hours = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => ({
+                    day,
+                    start_time: f.get(`working_hours_${day}_start`) || "09:00",
+                    end_time: f.get(`working_hours_${day}_end`) || "17:00",
+                    is_working: f.get(`working_hours_${day}_is_working`) === "on",
+                  }));
+
                   const staffData = {
                     name: f.get("name"),
                     role: f.get("role"),
                     phone: f.get("phone") || null,
                     email: f.get("email") || null,
+                    password: f.get("password") || undefined,
+                    working_hours,
                   };
 
                   if (editingStaff) {
@@ -1037,11 +1053,11 @@ export default function BusinessPage() {
                 }
               }}
             >
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <input
                   name="name"
                   placeholder="Ad Soyad"
-                  className="input flex-1"
+                  className="input flex-1 min-w-[150px]"
                   required
                   defaultValue={editingStaff?.name}
                 />
@@ -1063,8 +1079,16 @@ export default function BusinessPage() {
                 <input
                   name="email"
                   placeholder="E-posta"
-                  className="input flex-1"
+                  type="email"
+                  className="input flex-1 min-w-[200px]"
                   defaultValue={editingStaff?.email}
+                />
+                <input
+                  name="password"
+                  placeholder="Şifre"
+                  type="password"
+                  className="input w-32"
+                  defaultValue={editingStaff ? "" : undefined}
                 />
                 <button
                   type="submit"
@@ -1082,7 +1106,94 @@ export default function BusinessPage() {
                   </button>
                 )}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Çalışma Saatleri
+                </label>
+                <div className="space-y-2">
+                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                    <div key={day} className="flex gap-2 items-center">
+                      <span className="w-24 text-sm text-slate-600">
+                        {day === "Monday" ? "Pazartesi" :
+                         day === "Tuesday" ? "Salı" :
+                         day === "Wednesday" ? "Çarşamba" :
+                         day === "Thursday" ? "Perşembe" :
+                         day === "Friday" ? "Cuma" :
+                         day === "Saturday" ? "Cumartesi" : "Pazar"}
+                      </span>
+                      <input
+                        type="time"
+                        name={`working_hours_${day}_start`}
+                        className="input w-32"
+                        defaultValue={editingStaff?.working_hours?.find(wh => wh.day === day)?.start_time || "09:00"}
+                      />
+                      <span className="text-slate-500">-</span>
+                      <input
+                        type="time"
+                        name={`working_hours_${day}_end`}
+                        className="input w-32"
+                        defaultValue={editingStaff?.working_hours?.find(wh => wh.day === day)?.end_time || "17:00"}
+                      />
+                      <label className="flex items-center gap-1 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          name={`working_hours_${day}_is_working`}
+                          defaultChecked={editingStaff?.working_hours?.find(wh => wh.day === day)?.is_working !== false}
+                          className="rounded"
+                        />
+                        Çalışıyor
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </form>
+            <div className="card mb-6">
+              <h4 className="font-semibold text-slate-700 mb-4">Personel Performansı</h4>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await api.get("/business/staff/performance");
+                    setStaffPerformance(response.data);
+                  } catch (error) {
+                    console.error("Performans verisi yüklenirken hata:", error);
+                    toast.error("Performans verisi yüklenemedi");
+                  }
+                }}
+                className="btn-primary mb-4"
+              >
+                Performansı Yükle
+              </button>
+              {staffPerformance.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-2 px-3">Personel</th>
+                        <th className="text-right py-2 px-3">Tamamlanan Randevular</th>
+                        <th className="text-right py-2 px-3">Toplam Gelir (TL)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staffPerformance.map((p) => (
+                        <tr key={p._id} className="border-b border-slate-100">
+                          <td className="py-2 px-3">
+                            <div className="font-medium">{p.staff_name}</div>
+                            <div className="text-slate-500 text-xs">{p.staff_email}</div>
+                          </td>
+                          <td className="text-right py-2 px-3">{p.total_appointments}</td>
+                          <td className="text-right py-2 px-3 font-medium text-green-600">
+                            ₺{p.total_revenue?.toFixed(2) || "0.00"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Performans verisi yüklenmek için butona tıklayın.</p>
+              )}
+            </div>
             <div className="space-y-2 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar mb-6">
               {!Array.isArray(staff) || staff.length === 0 ? (
                 <p className="text-sm text-slate-500 py-2">
@@ -1554,6 +1665,32 @@ export default function BusinessPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
+                          {a.status !== "blocked" && (
+                            <select
+                              value={a.staff_id || ""}
+                              onChange={async (e) => {
+                                try {
+                                  await api.patch(
+                                    `/business/appointments/${a._id}`,
+                                    {
+                                      staff_id: e.target.value || null,
+                                    },
+                                  );
+                                  loadAppointments();
+                                } catch (err) {
+                                  alert("Personel atanırken hata oluştu.");
+                                }
+                              }}
+                              className="input text-sm py-1.5 px-3 w-40"
+                            >
+                              <option value="">Personel Seç</option>
+                              {staff.filter(s => s.role === 'staff').map((s) => (
+                                <option key={s._id} value={s._id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                           <select
                             value={a.status}
                             onChange={async (e) => {
@@ -2878,6 +3015,7 @@ export default function BusinessPage() {
                 process_steps: serviceForm.process_steps,
                 is_online: serviceForm.is_online,
                 consumed_products: serviceForm.consumed_products,
+                assigned_staff: serviceForm.assigned_staff,
               };
 
               await api.put(
@@ -3043,6 +3181,56 @@ export default function BusinessPage() {
               >
                 <Plus className="w-4 h-4" />
                 Ürün Ekle
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Atanmış Personeller
+            </label>
+            <div className="space-y-2">
+              {serviceForm.assigned_staff.map((staffId, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <select
+                    value={staffId}
+                    onChange={(e) => {
+                      const newStaff = [...serviceForm.assigned_staff];
+                      newStaff[index] = e.target.value;
+                      setServiceForm({ ...serviceForm, assigned_staff: newStaff });
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Personel seçin</option>
+                    {staff.filter(s => s.role === 'staff').map((s) => (
+                      <option key={s._id} value={s._id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newStaff = serviceForm.assigned_staff.filter((_, i) => i !== index);
+                      setServiceForm({ ...serviceForm, assigned_staff: newStaff });
+                    }}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceForm({
+                    ...serviceForm,
+                    assigned_staff: [...serviceForm.assigned_staff, ""],
+                  });
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Personel Ekle
               </button>
             </div>
           </div>

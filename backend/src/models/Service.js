@@ -19,6 +19,7 @@ const serviceSchema = new mongoose.Schema(
         quantity: { type: Number, required: true },
       }
     ],
+    assigned_staff: [{ type: mongoose.Schema.Types.ObjectId, ref: "Staff" }],
   },
   { timestamps: true }
 );
