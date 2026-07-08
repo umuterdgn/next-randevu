@@ -22,9 +22,12 @@ export default function StaffLogin() {
       });
 
       if (response.data.success) {
-        login(response.data.user, response.data.token);
+        await login(response.data.user, response.data.token);
         toast.success("Giriş başarılı!");
-        navigate("/staff/dashboard");
+        // Small delay to ensure state is updated before navigation
+        setTimeout(() => {
+          navigate("/staff/dashboard");
+        }, 100);
       }
     } catch (error) {
       console.error("Staff login error:", error);

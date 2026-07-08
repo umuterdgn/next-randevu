@@ -3,7 +3,14 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Protected({ children, role }) {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" />;
+  
+  // Redirect unauthenticated users to appropriate login page based on role
+  if (!user) {
+    if (role === "staff") {
+      return <Navigate to="/personel-giris" />;
+    }
+    return <Navigate to="/login" />;
+  }
   
   // Redirect staff members trying to access business owner routes
   if (user.role === "staff" && role !== "staff") {
