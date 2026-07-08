@@ -11,6 +11,7 @@ import {
   Wallet,
   DollarSign,
   Settings,
+  Package,
 } from "lucide-react";
 
 const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
@@ -50,6 +51,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/appointments", label: "Appointments", icon: CalendarDays },
     { to: "/business/finance", label: "Finance", icon: DollarSign },
     { to: "/business/cari", label: "Cari Hesaplar", icon: Wallet },
+    { to: "/business/inventory", label: "Stok Yönetimi", icon: Package },
     { to: "/business/campaigns", label: "AI Campaigns", icon: Megaphone },
     { to: "/business/settings", label: "Ayarlar", icon: Settings },
   ];

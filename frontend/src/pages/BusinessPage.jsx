@@ -48,6 +48,7 @@ import Card from "../components/Card";
 import FinanceComponent from "../components/FinanceComponent";
 import CariComponent from "../components/CariComponent";
 import Modal, { ConfirmModal } from "../components/Modal";
+import InventoryPage from "./InventoryPage";
 
 const statusClasses = {
   pending: "bg-amber-100 text-amber-700",
@@ -74,11 +75,13 @@ export default function BusinessPage() {
             ? "finance"
             : location.pathname.includes("cari")
               ? "cari"
-              : location.pathname.includes("staff")
-                ? "staff"
-                : location.pathname.includes("settings")
-                  ? "settings"
-                  : "dashboard";
+              : location.pathname.includes("inventory")
+                ? "inventory"
+                : location.pathname.includes("staff")
+                  ? "staff"
+                  : location.pathname.includes("settings")
+                    ? "settings"
+                    : "dashboard";
 
   const handleTabChange = (tab) => {
     if (tab === "dashboard") navigate("/business");
@@ -1756,6 +1759,7 @@ export default function BusinessPage() {
 
       {activeTab === "finance" && <FinanceComponent />}
       {activeTab === "cari" && <CariComponent />}
+      {activeTab === "inventory" && <InventoryPage />}
 
       {activeTab === "settings" && (
         <div className="animate-in fade-in duration-300">
