@@ -52,7 +52,6 @@ router.post(
   asyncHandler(createBusinessFromUser),
 );
 
-router.post("/campaign/send", verifyToken, sendCampaignMessageController);
 // All other routes require tenant
 router.use(
   requireAuth,
@@ -66,7 +65,7 @@ router.use(
   ),
   requireTenant,
 );
-
+router.post("/campaign/send", verifyToken, sendCampaignMessageController);
 router.get("/dashboard", asyncHandler(dashboard));
 router.get("/services", asyncHandler(listServices));
 router.post(
