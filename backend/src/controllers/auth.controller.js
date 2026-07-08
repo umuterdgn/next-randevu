@@ -337,7 +337,7 @@ export const staffLogin = async (req, res) => {
     }
 
     // Find staff member by email
-    const staff = await Staff.findOne({ email }).populate('business_ref');
+    const staff = await Staff.findOne({ email });
 
     if (!staff) {
       return res.status(401).json({
