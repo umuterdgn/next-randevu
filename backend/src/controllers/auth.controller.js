@@ -336,8 +336,8 @@ export const staffLogin = async (req, res) => {
       });
     }
 
-    // Find staff member by email
-    const staff = await Staff.findOne({ email });
+    // Find staff member by email - NO populate calls
+    const staff = await Staff.findOne({ email }).lean();
 
     if (!staff) {
       return res.status(401).json({
@@ -351,6 +351,14 @@ export const staffLogin = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Hesabınız devre dışı bırakılmış"
+      });
+    }
+
+    // Handle legacy staff accounts without password
+    if (!staff.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Bu personelin şifresi ayarlanmamış. Lütfen işletme panelinden bu personeli güncelleyerek bir şifre belirleyin."
       });
     }
 
@@ -402,7 +410,8 @@ export const staffLogin = async (req, res) => {
       user_agent: req.headers["user-agent"] || "",
     });
 
-    staff.password = undefined;
+    // Remove password from response
+    delete staff.password;
 
     res.json({
       success: true,
