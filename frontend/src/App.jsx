@@ -34,6 +34,7 @@ export default function App() {
         } />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/staff/login" element={<StaffLogin />} />
+        <Route path="/personel-giris" element={<StaffLogin />} />
         <Route path="/auth/sso" element={<SSOPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/randevu/:id" element={<AppointmentTrackingPage />} />
