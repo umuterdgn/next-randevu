@@ -315,22 +315,29 @@ export const patchAppointmentStatus = async (req, res) => {
     });
   }
 
-  await logAudit({
-    business_id: req.business_id,
-    user_id: req.user?._id || null,
-    action: "APPOINTMENT_STATUS_UPDATED",
-    method: req.method,
-    path: req.originalUrl,
-    status_code: 200,
-    ip: req.ip || "",
-    user_agent: req.headers["user-agent"] || "",
-    meta: {
-      appointment_id: req.params.id,
-      status: req.body.status,
-      payment_status: req.body.payment_status,
-    },
-  });
   res.json(data);
+};
+
+export const updateAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { staff_id } = req.body;
+
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: id, business_id: req.business_id },
+      { staff_id },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Randevu bulunamadı" });
+    }
+
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    console.error("Update appointment error:", error);
+    res.status(500).json({ success: false, message: "Randevu güncellenirken hata oluştu" });
+  }
 };
 
 export const patchRewardThreshold = async (req, res) => {

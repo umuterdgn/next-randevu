@@ -26,6 +26,7 @@ import {
   deleteProduct,
   getStaffAppointments,
   getStaffPerformance,
+  updateAppointment,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -188,6 +189,7 @@ router.patch(
   validate(updateAppointmentStatusRules),
   asyncHandler(patchAppointmentStatus),
 );
+router.patch("/appointments/:id", asyncHandler(updateAppointment));
 router.patch(
   "/loyalty/threshold",
   validate(updateThresholdRules),
@@ -315,7 +317,7 @@ router.delete("/products/:id", asyncHandler(deleteProduct));
 
 // Staff routes
 router.get("/staff/appointments", requireAuth, requireRole("staff"), asyncHandler(getStaffAppointments));
-router.get("/staff/performance", requireAuth, requireRole("owner"), asyncHandler(getStaffPerformance));
+router.get("/staff/performance", requireAuth, requireRole("admin", "business", "owner", "business_owner"), asyncHandler(getStaffPerformance));
 
 /**
  * GET /:businessId/calendar.ics
