@@ -42,7 +42,7 @@ import {
 } from "../validators/business.validators.js";
 import { Business } from "../models/Business.js";
 import { Appointment } from "../models/Appointment.js";
-
+import { sendCampaignMessageController } from "../controllers/business.controller.js";
 const router = Router();
 
 // Route for creating business from SSO user (before tenant middleware)
@@ -52,6 +52,7 @@ router.post(
   asyncHandler(createBusinessFromUser),
 );
 
+router.post("/campaign/send", verifyToken, sendCampaignMessageController);
 // All other routes require tenant
 router.use(
   requireAuth,
