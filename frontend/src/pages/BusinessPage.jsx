@@ -216,8 +216,8 @@ export default function BusinessPage() {
       setServices(s.data);
       setCustomers(
         c.data?.data ||
-        c.data?.customers ||
-        (Array.isArray(c.data) ? c.data : []),
+          c.data?.customers ||
+          (Array.isArray(c.data) ? c.data : []),
       );
       setAppointments(a.data);
       setStaff(st.data);
@@ -262,7 +262,7 @@ export default function BusinessPage() {
           symbol: bData.loyalty_symbol || "⭐",
         });
 
-        setCreditsRemaining(bData.ai_campaign_credits || 5);
+        setCreditsRemaining(bData.ai_campaign_credits ?? 5);
       }
 
       if (selectedCustomer) {
@@ -276,7 +276,10 @@ export default function BusinessPage() {
     } catch (error) {
       console.error("Load error:", error);
 
-      if (error.response?.data?.require_apply || error.response?.status === 404) {
+      if (
+        error.response?.data?.require_apply ||
+        error.response?.status === 404
+      ) {
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         storedUser.business_id = "pending";
         localStorage.setItem("user", JSON.stringify(storedUser));
@@ -284,7 +287,9 @@ export default function BusinessPage() {
         return;
       }
 
-      toast.error(error.response?.data?.message || "Veriler yüklenirken hata oluştu.");
+      toast.error(
+        error.response?.data?.message || "Veriler yüklenirken hata oluştu.",
+      );
     }
   }; // DÜZELTİLDİ: Fazladan parantezler silindi
 
@@ -758,7 +763,7 @@ export default function BusinessPage() {
                   console.error("Hata:", err);
                   toast.error(
                     err.response?.data?.message ||
-                    "Servis eklenirken hata oluştu.",
+                      "Servis eklenirken hata oluştu.",
                   );
                 } finally {
                   setIsSubmittingService(false);
@@ -952,9 +957,9 @@ export default function BusinessPage() {
                   console.error("Hata:", err);
                   toast.error(
                     err.response?.data?.message ||
-                    (editingStaff
-                      ? "Personel güncellenirken hata oluştu."
-                      : "Personel eklenirken hata oluştu."),
+                      (editingStaff
+                        ? "Personel güncellenirken hata oluştu."
+                        : "Personel eklenirken hata oluştu."),
                   );
                 }
               }}
@@ -1378,8 +1383,8 @@ export default function BusinessPage() {
                   className="w-full"
                   tileClassName={({ date, view }) =>
                     view === "month" &&
-                      selectedDate &&
-                      date.toDateString() === selectedDate.toDateString()
+                    selectedDate &&
+                    date.toDateString() === selectedDate.toDateString()
                       ? "bg-indigo-600 text-white rounded-lg"
                       : ""
                   }
@@ -1399,10 +1404,10 @@ export default function BusinessPage() {
                   <h3 className="font-semibold text-slate-700">
                     {selectedDate
                       ? `${selectedDate.toLocaleDateString("tr-TR", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })} Randevuları`
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })} Randevuları`
                       : "Tüm Randevular"}
                   </h3>
                   <span className="text-sm text-slate-500">
@@ -1421,10 +1426,11 @@ export default function BusinessPage() {
                     appointments.map((a) => (
                       <div
                         key={a._id}
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${a.status === "blocked"
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${
+                          a.status === "blocked"
                             ? "bg-slate-100 border-slate-300 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#e5e7eb_10px,#e5e7eb_20px)]"
                             : "bg-white border-slate-200 hover:border-indigo-200"
-                          }`}
+                        }`}
                       >
                         <div className="flex-1">
                           {a.status === "blocked" ? (
@@ -1519,19 +1525,21 @@ export default function BusinessPage() {
               <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setBlockTab("weekly")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${blockTab === "weekly"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                    blockTab === "weekly"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                  }`}
                 >
                   Haftalık Çalışma Saatleri
                 </button>
                 <button
                   onClick={() => setBlockTab("custom")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${blockTab === "custom"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                    blockTab === "custom"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                  }`}
                 >
                   Özel Tarih/Saat Kapat
                 </button>
@@ -2421,7 +2429,7 @@ export default function BusinessPage() {
                         if (err.response?.status === 402) {
                           toast.error(
                             err.response?.data?.message ||
-                            "Krediniz bitti, lütfen paket yükseltin",
+                              "Krediniz bitti, lütfen paket yükseltin",
                           );
                         } else {
                           toast.error("Kampanya oluşturulurken hata oluştu.");
@@ -2450,7 +2458,7 @@ export default function BusinessPage() {
           </div>
 
           {campaigns &&
-            (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
+          (campaigns.whatsapp || campaigns.instagram || campaigns.facebook) ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-lg mb-8">
               <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="w-5 h-5 text-fuchsia-500" />
@@ -2462,28 +2470,31 @@ export default function BusinessPage() {
               <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setActivePlatformTab("whatsapp")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "whatsapp"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                    activePlatformTab === "whatsapp"
                       ? "bg-green-500 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                  }`}
                 >
                   WhatsApp
                 </button>
                 <button
                   onClick={() => setActivePlatformTab("instagram")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "instagram"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                    activePlatformTab === "instagram"
                       ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                  }`}
                 >
                   Instagram
                 </button>
                 <button
                   onClick={() => setActivePlatformTab("facebook")}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${activePlatformTab === "facebook"
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
+                    activePlatformTab === "facebook"
                       ? "bg-blue-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
+                  }`}
                 >
                   Facebook
                 </button>
@@ -2578,10 +2589,11 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("post")}
-                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "post"
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        imageFormat === "post"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                        }`}
+                      }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">⬜</div>
@@ -2594,10 +2606,11 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("story")}
-                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "story"
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        imageFormat === "story"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                        }`}
+                      }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">📱</div>
@@ -2610,10 +2623,11 @@ export default function BusinessPage() {
                     <button
                       type="button"
                       onClick={() => setImageFormat("banner")}
-                      className={`p-3 rounded-xl border-2 transition-all ${imageFormat === "banner"
+                      className={`p-3 rounded-xl border-2 transition-all ${
+                        imageFormat === "banner"
                           ? "border-violet-500 bg-violet-50 text-violet-700"
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:border-violet-300"
-                        }`}
+                      }`}
                     >
                       <div className="text-center">
                         <div className="text-2xl mb-1">🖼️</div>
@@ -2802,7 +2816,7 @@ export default function BusinessPage() {
               console.error("Hata:", err);
               toast.error(
                 err.response?.data?.message ||
-                "Servis güncellenirken hata oluştu.",
+                  "Servis güncellenirken hata oluştu.",
               );
             } finally {
               setIsSubmittingService(false);
