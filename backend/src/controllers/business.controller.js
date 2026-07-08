@@ -102,7 +102,7 @@ export const listCustomers = async (req, res) => {
   // DÜZELTİLDİ: $or tuzağı kaldırıldı, sadece business_id arıyoruz
   const business = await Business.findOne({ business_id: req.business_id });
   const reward_threshold = business?.reward_threshold || 10;
-  res.json({ customers: data, reward_threshold });
+  res.json(data);
 };
 
 export const addCustomer = async (req, res) => {
