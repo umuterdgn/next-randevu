@@ -1010,6 +1010,9 @@ export default function BusinessPage() {
               className="mb-4 flex flex-col gap-3"
               onSubmit={async (e) => {
                 e.preventDefault();
+                if (isSubmittingStaff) return;
+                
+                setIsSubmittingStaff(true);
                 const f = new FormData(e.currentTarget);
                 try {
                   // Build working hours array
@@ -1050,6 +1053,8 @@ export default function BusinessPage() {
                         ? "Personel güncellenirken hata oluştu."
                         : "Personel eklenirken hata oluştu."),
                   );
+                } finally {
+                  setIsSubmittingStaff(false);
                 }
               }}
             >

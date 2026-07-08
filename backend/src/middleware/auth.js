@@ -1,4 +1,5 @@
 import { User } from "../models/User.js";
+import { Staff } from "../models/Staff.js";
 import { createError } from "../utils/appError.js";
 import { verifyToken } from "../utils/jwt.js";
 import { asyncHandler } from "./asyncHandler.js";
@@ -23,19 +24,26 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   }
 
   const userId = decoded.id || decoded._id || decoded.sub;
+  const userRole = decoded.role;
 
   if (!userId) {
     throw createError("Token içinde kullanıcı ID'si bulunamadı", 401);
   }
 
-  const user = await User.findById(userId).lean();
+  // Fetch user from appropriate model based on role
+  let user;
+  if (userRole === 'staff') {
+    user = await Staff.findById(userId).lean();
+  } else {
+    user = await User.findById(userId).lean();
+  }
 
   if (!user) {
-    console.error(`[401 BLOCKED] Veritabanında kullanıcı bulunamadı. ID: ${userId}`);
+    console.error(`[401 BLOCKED] Veritabanında kullanıcı bulunamadı. ID: ${userId}, Role: ${userRole}`);
     throw createError("User not found", 401);
   }
 
-  // Eğer kullanıcı pasife alınmışsa 403 verir, logluyoruz:
+  // Check if user is active (both User and Staff models have is_active)
   if (!user.is_active) {
     console.error(`[403 BLOCKED] Kullanıcı hesabı pasif (is_active: false). E-posta: ${user.email}`);
     throw createError("User is inactive", 403);
