@@ -696,92 +696,92 @@ export const createBusinessFromUser = async (req, res) => {
       message: "İşletme oluşturulurken bir hata oluştu",
     });
   }
-  export const sendCampaignMessageController = async (req, res) => {
-    try {
-      const { campaignText, segment } = req.body;
-      const businessId = req.user?.business_id;
+};
+export const sendCampaignMessageController = async (req, res) => {
+  try {
+    const { campaignText, segment } = req.body;
+    const businessId = req.user?.business_id;
 
-      if (!campaignText) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Kampanya metni gerekli." });
-      }
+    if (!campaignText) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Kampanya metni gerekli." });
+    }
 
-      const business = await Business.findOne({ business_id: businessId });
-      if (!business) {
-        return res
-          .status(404)
-          .json({ success: false, message: "İşletme bulunamadı" });
-      }
+    const business = await Business.findOne({ business_id: businessId });
+    if (!business) {
+      return res
+        .status(404)
+        .json({ success: false, message: "İşletme bulunamadı" });
+    }
 
-      const customers = await Customer.find({ business_id: businessId });
+    const customers = await Customer.find({ business_id: businessId });
 
-      if (!customers || customers.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Gönderilecek müşteri bulunamadı.",
-        });
-      }
-
-      const hasOfficialApi =
-        business.whatsapp_token && business.whatsapp_phone_number_id;
-      const QR_BOT_URL =
-        process.env.QR_BOT_URL || "http://localhost:3001/api/send-message";
-
-      let successCount = 0;
-      let failCount = 0;
-
-      for (const customer of customers) {
-        if (!customer.phone) continue;
-
-        const cleanPhone = customer.phone.replace(/[^0-9]/g, "");
-
-        try {
-          if (hasOfficialApi) {
-            await axios.post(
-              `https://graph.facebook.com/v19.0/${business.whatsapp_phone_number_id}/messages`,
-              {
-                messaging_product: "whatsapp",
-                recipient_type: "individual",
-                to: cleanPhone,
-                type: "text",
-                text: { preview_url: false, body: campaignText },
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${business.whatsapp_token}`,
-                  "Content-Type": "application/json",
-                },
-              },
-            );
-          } else {
-            await axios.post(QR_BOT_URL, {
-              phone: cleanPhone,
-              message: campaignText,
-            });
-          }
-
-          successCount++;
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-        } catch (error) {
-          console.error(
-            `Mesaj İletilemedi (${cleanPhone}):`,
-            error.response?.data || error.message,
-          );
-          failCount++;
-        }
-      }
-
-      res.json({
-        success: true,
-        message: `Kampanya tamamlandı! Başarılı: ${successCount}, Başarısız: ${failCount}`,
-      });
-    } catch (error) {
-      console.error("Kampanya Gönderim Hatası:", error);
-      res.status(500).json({
+    if (!customers || customers.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: "Kampanya gönderilirken sunucu hatası oluştu.",
+        message: "Gönderilecek müşteri bulunamadı.",
       });
     }
-  };
+
+    const hasOfficialApi =
+      business.whatsapp_token && business.whatsapp_phone_number_id;
+    const QR_BOT_URL =
+      process.env.QR_BOT_URL || "http://localhost:3001/api/send-message";
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const customer of customers) {
+      if (!customer.phone) continue;
+
+      const cleanPhone = customer.phone.replace(/[^0-9]/g, "");
+
+      try {
+        if (hasOfficialApi) {
+          await axios.post(
+            `https://graph.facebook.com/v19.0/${business.whatsapp_phone_number_id}/messages`,
+            {
+              messaging_product: "whatsapp",
+              recipient_type: "individual",
+              to: cleanPhone,
+              type: "text",
+              text: { preview_url: false, body: campaignText },
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${business.whatsapp_token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        } else {
+          await axios.post(QR_BOT_URL, {
+            phone: cleanPhone,
+            message: campaignText,
+          });
+        }
+
+        successCount++;
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } catch (error) {
+        console.error(
+          `Mesaj İletilemedi (${cleanPhone}):`,
+          error.response?.data || error.message,
+        );
+        failCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Kampanya tamamlandı! Başarılı: ${successCount}, Başarısız: ${failCount}`,
+    });
+  } catch (error) {
+    console.error("Kampanya Gönderim Hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Kampanya gönderilirken sunucu hatası oluştu.",
+    });
+  }
 };
