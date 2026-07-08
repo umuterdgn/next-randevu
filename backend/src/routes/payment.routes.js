@@ -10,7 +10,8 @@ router.post("/buy-credits", async (req, res) => {
     const businessId = req.user?.business_id || req.body.business_id;
     
     if (businessId) {
-      const business = await Business.findOne({ $or: [{ _id: businessId }, { business_id: businessId }] });
+      // DÜZELTİLDİ: $or tuzağı kaldırıldı, sadece özel ID'miz ile arıyoruz
+      const business = await Business.findOne({ business_id: businessId });
       
       if (!business) {
         return res.status(404).json({
@@ -31,8 +32,8 @@ router.post("/buy-credits", async (req, res) => {
         meta: { type: "ai_credits", package: 50 },
       });
       
-      // Generate payment link to nxa.com.tr
-      const paymentLink = `https://nxa.com.tr/checkout?biz_id=${business._id}&type=ai_credits&package=50`;
+      // DÜZELTİLDİ: Nexa altyapısına karmaşık MongoDB _id yerine BIZ-... ID'mizi gönderiyoruz
+      const paymentLink = `https://nxa.com.tr/checkout?biz_id=${business.business_id}&type=ai_credits&package=50`;
       
       res.json({
         success: true,
