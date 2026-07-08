@@ -38,6 +38,8 @@ import {
   Lock,
   Download,
   Copy,
+  Plus,
+  X,
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import { useAuth } from "../context/AuthContext";
@@ -200,17 +202,20 @@ export default function BusinessPage() {
     critical_points: "",
     process_steps: "",
     is_online: false,
+    consumed_products: [],
   });
+  const [products, setProducts] = useState([]);
 
   const load = async () => {
     try {
-      const [d, s, c, a, st, settingsRes] = await Promise.all([
+      const [d, s, c, a, st, settingsRes, productsRes] = await Promise.all([
         api.get("/business/dashboard"),
         api.get("/business/services"),
         api.get("/business/customers"),
         api.get("/business/appointments"),
         api.get("/business/staff"),
         api.get("/business/settings"),
+        api.get("/business/products"),
       ]);
       setDash(d.data);
       setServices(s.data);
@@ -221,6 +226,7 @@ export default function BusinessPage() {
       );
       setAppointments(a.data);
       setStaff(st.data);
+      setProducts(productsRes.data || []);
 
       const bData = settingsRes.data;
       if (bData) {
@@ -427,6 +433,7 @@ export default function BusinessPage() {
       critical_points: service.critical_points || "",
       process_steps: service.process_steps || "",
       is_online: service.is_online || false,
+      consumed_products: service.consumed_products || [],
     });
     setEditingService(service);
     setShowServiceEditModal(true);
@@ -469,6 +476,7 @@ export default function BusinessPage() {
       critical_points: "",
       process_steps: "",
       is_online: false,
+      consumed_products: [],
     });
   };
 
@@ -2803,6 +2811,7 @@ export default function BusinessPage() {
                 critical_points: serviceForm.critical_points,
                 process_steps: serviceForm.process_steps,
                 is_online: serviceForm.is_online,
+                consumed_products: serviceForm.consumed_products,
               };
 
               await api.put(
@@ -2908,6 +2917,68 @@ export default function BusinessPage() {
               }
               className="input w-full h-20 resize-none"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Tüketilen Ürünler
+            </label>
+            <div className="space-y-2">
+              {serviceForm.consumed_products.map((item, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <select
+                    value={item.product_id}
+                    onChange={(e) => {
+                      const newProducts = [...serviceForm.consumed_products];
+                      newProducts[index].product_id = e.target.value;
+                      setServiceForm({ ...serviceForm, consumed_products: newProducts });
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Ürün seçin</option>
+                    {products.map((product) => (
+                      <option key={product._id} value={product._id}>
+                        {product.name} (Stok: {product.stock} {product.unit})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const newProducts = [...serviceForm.consumed_products];
+                      newProducts[index].quantity = parseInt(e.target.value);
+                      setServiceForm({ ...serviceForm, consumed_products: newProducts });
+                    }}
+                    className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1"
+                    placeholder="Miktar"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newProducts = serviceForm.consumed_products.filter((_, i) => i !== index);
+                      setServiceForm({ ...serviceForm, consumed_products: newProducts });
+                    }}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceForm({
+                    ...serviceForm,
+                    consumed_products: [...serviceForm.consumed_products, { product_id: "", quantity: 1 }],
+                  });
+                }}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Ürün Ekle
+              </button>
+            </div>
           </div>
           {(() => {
             const canUseOnline =

@@ -20,6 +20,10 @@ import {
   redeemReward,
   uploadLogo,
   createBusinessFromUser,
+  listProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -300,6 +304,12 @@ router.put("/staff/:id", asyncHandler(updateStaff));
 router.delete("/staff/:id", asyncHandler(deleteStaff));
 router.post("/redeem-reward", asyncHandler(redeemReward));
 router.post("/ai/generate-image", asyncHandler(generateImageController));
+
+// Product routes
+router.get("/products", asyncHandler(listProducts));
+router.post("/products", asyncHandler(addProduct));
+router.put("/products/:id", asyncHandler(updateProduct));
+router.delete("/products/:id", asyncHandler(deleteProduct));
 
 /**
  * GET /:businessId/calendar.ics

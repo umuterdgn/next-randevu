@@ -22,6 +22,7 @@ import { Transaction } from "../models/Transaction.js";
 import { Service } from "../models/Service.js";
 import { Staff } from "../models/Staff.js";
 import { User } from "../models/User.js";
+import { Product } from "../models/Product.js";
 import crypto from "crypto";
 import axios from "axios";
 
@@ -206,6 +207,24 @@ export const patchAppointmentStatus = async (req, res) => {
       "DEBUG: Customer loyalty points updated:",
       customer?.loyalty_points,
     );
+
+    // Auto-deduct stock for consumed products
+    try {
+      const { Service } = await import("../models/Service.js");
+      const serviceDetails = await Service.findById(data.service_id);
+
+      if (serviceDetails && serviceDetails.consumed_products && serviceDetails.consumed_products.length > 0) {
+        for (const item of serviceDetails.consumed_products) {
+          await Product.findByIdAndUpdate(
+            item.product_id,
+            { $inc: { stock: -item.quantity } }
+          );
+        }
+        console.log("📦 Stoklar otomatik olarak düşüldü!");
+      }
+    } catch (stockError) {
+      console.error("Stok düşürme hatası:", stockError);
+    }
   }
 
   // Handle payment_status and Cari accounting
@@ -784,5 +803,48 @@ export const sendCampaignMessageController = async (req, res) => {
       success: false,
       message: "Kampanya gönderilirken sunucu hatası oluştu.",
     });
+  }
+};
+
+// Product CRUD Controllers
+export const listProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ business_id: req.business_id }).sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Ürünler getirilemedi." });
+  }
+};
+
+export const addProduct = async (req, res) => {
+  try {
+    const { name, stock, unit } = req.body;
+    const newProduct = await Product.create({ business_id: req.business_id, name, stock, unit });
+    res.status(201).json({ success: true, data: newProduct });
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Ürün eklenemedi." });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const { name, stock, unit } = req.body;
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, business_id: req.business_id },
+      { name, stock, unit },
+      { new: true }
+    );
+    res.json({ success: true, data: product });
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Ürün güncellenemedi." });
+  }
+};
+
+export const deleteProduct = async (req, res) => {
+  try {
+    await Product.findOneAndDelete({ _id: req.params.id, business_id: req.business_id });
+    res.json({ success: true, message: "Ürün silindi." });
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Ürün silinemedi." });
   }
 };

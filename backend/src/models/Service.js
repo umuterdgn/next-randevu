@@ -13,6 +13,12 @@ const serviceSchema = new mongoose.Schema(
     process_steps: { type: String, required: false },
     is_active: { type: Boolean, default: true },
     is_online: { type: Boolean, default: false },
+    consumed_products: [
+      {
+        product_id: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        quantity: { type: Number, required: true },
+      }
+    ],
   },
   { timestamps: true }
 );
