@@ -42,7 +42,7 @@ import {
 } from "../validators/business.validators.js";
 import { Business } from "../models/Business.js";
 import { Appointment } from "../models/Appointment.js";
-import { sendCampaignMessageController } from "../controllers/business.controller.js";
+import axios from "axios";
 const router = Router();
 
 // Route for creating business from SSO user (before tenant middleware)
@@ -65,7 +65,93 @@ router.use(
   ),
   requireTenant,
 );
-router.post("/campaign/send", verifyToken, sendCampaignMessageController);
+router.post(
+  "/campaign/send",
+  asyncHandler(async (req, res) => {
+    const { campaignText, segment } = req.body;
+    const idToUse = req.business_id || req.user?.business_id;
+
+    if (!campaignText) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Kampanya metni boş olamaz." });
+    }
+
+    const business = await Business.findOne({ business_id: idToUse });
+    const customers = await Customer.find({ business_id: idToUse.toString() });
+
+    if (customers.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Gönderilecek müşteri bulunamadı." });
+    }
+
+    const hasOfficialApi =
+      business.whatsapp_token && business.whatsapp_phone_number_id;
+    const QR_BOT_URL =
+      process.env.QR_BOT_URL || "http://localhost:3001/api/send-message";
+
+    let successCount = 0;
+    let failCount = 0;
+
+    console.log(
+      `\n🚀 KAMPANYA GÖNDERİMİ BAŞLADI! Toplam Müşteri: ${customers.length}`,
+    );
+
+    for (const customer of customers) {
+      if (!customer.phone) continue;
+      const cleanPhone = customer.phone.replace(/[^0-9]/g, "");
+
+      try {
+        if (hasOfficialApi) {
+          // A: Facebook Resmi API
+          await axios.post(
+            `https://graph.facebook.com/v19.0/${business.whatsapp_phone_number_id}/messages`,
+            {
+              messaging_product: "whatsapp",
+              recipient_type: "individual",
+              to: cleanPhone,
+              type: "text",
+              text: { preview_url: false, body: campaignText },
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${business.whatsapp_token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        } else {
+          // B: Korsan QR Bot Yöntemi
+          await axios.post(QR_BOT_URL, {
+            phone: cleanPhone,
+            message: campaignText,
+          });
+        }
+
+        successCount++;
+        console.log(`✅ BAŞARILI: ${customer.phone}`);
+        // Spam yememek için 1.5 saniye mola
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } catch (error) {
+        console.error(
+          `❌ HATA (${customer.phone}):`,
+          error.response?.data || error.message,
+        );
+        failCount++;
+      }
+    }
+
+    console.log(
+      `🏁 KAMPANYA BİTTİ: ${successCount} kişiye ulaştı, ${failCount} başarısız.\n`,
+    );
+    res.json({
+      success: true,
+      message: `Kampanya tamamlandı! Başarılı: ${successCount}, Başarısız: ${failCount}`,
+      totalSent: successCount,
+    });
+  }),
+);
 router.get("/dashboard", asyncHandler(dashboard));
 router.get("/services", asyncHandler(listServices));
 router.post(
