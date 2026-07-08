@@ -76,14 +76,23 @@ export default function LoginPage() {
         <button className="btn-dark w-full py-2.5" disabled={loading}>
           {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
         </button>
-        <div className="text-center pt-2">
+        <div className="text-center pt-2 space-y-2">
           <button
             type="button"
-            onClick={() => navigate("/agent")}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+            onClick={() => navigate("/personel-giris")}
+            className="text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
           >
-            Satış Ekibi / Bayi Girişi
+            Personel Girişi
           </button>
+          <div className="border-t border-slate-200 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate("/agent")}
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              Satış Ekibi / Bayi Girişi
+            </button>
+          </div>
         </div>
       </form>
 
