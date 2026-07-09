@@ -26,7 +26,6 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, busi
       e.preventDefault();
       toast.error("Bu özellik Full Paket'e özeldir. Erişmek için lütfen Sisteminizi yükseltin.", {
         duration: 4000,
-        icon: <Crown className="w-5 h-5 text-amber-500" />,
       });
       return;
     }
