@@ -37,7 +37,7 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
   );
 };
 
-export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user }) {
+export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user, businessPlan }) {
   const ownerMenu = [
     { to: "/owner", label: "Owner Dashboard", icon: LayoutDashboard },
     { to: "/owner/applications", label: "Applications", icon: Sparkles },
@@ -49,15 +49,20 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/services", label: "Services", icon: Briefcase },
     { to: "/business/customers", label: "Customers", icon: Users },
     { to: "/business/appointments", label: "Appointments", icon: CalendarDays },
-    { to: "/business/staff", label: "Personel Yönetimi", icon: Users },
+    { to: "/business/staff", label: "Personel Yönetimi", icon: Users, requiresFull: true },
     { to: "/business/finance", label: "Finance", icon: DollarSign },
     { to: "/business/cari", label: "Cari Hesaplar", icon: Wallet },
-    { to: "/business/inventory", label: "Stok Yönetimi", icon: Package },
-    { to: "/business/campaigns", label: "AI Campaigns", icon: Megaphone },
+    { to: "/business/inventory", label: "Stok Yönetimi", icon: Package, requiresFull: true },
+    { to: "/business/campaigns", label: "AI Campaigns", icon: Megaphone, requiresFull: true },
     { to: "/business/settings", label: "Ayarlar", icon: Settings },
   ];
 
-  const menu = user?.role === "owner" ? ownerMenu : bizMenu;
+  const menu = user?.role === "owner" ? ownerMenu : bizMenu.filter(item => {
+    if (item.requiresFull && businessPlan !== 'full') {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>

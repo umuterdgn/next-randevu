@@ -167,7 +167,7 @@ router.post("/whatsapp", async (req, res) => {
 
 /**
  * POST /api/webhooks/nxa-billing
- * NXA Billing Webhook - Secure endpoint for adding AI tokens after successful payment
+ * NXA Billing Webhook - Secure endpoint for adding AI tokens and upgrading plans after successful payment
  * Secured by x-nxa-webhook-secret header
  */
 router.post("/nxa-billing", async (req, res) => {
@@ -180,16 +180,11 @@ router.post("/nxa-billing", async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    const { business_id, action, amount } = req.body;
+    const { business_id, action, amount, plan } = req.body;
 
-    if (!business_id || !action || !amount) {
+    if (!business_id || !action) {
       console.error("❌ Invalid webhook payload:", req.body);
       return res.status(400).json({ success: false, message: "Invalid payload" });
-    }
-
-    if (action !== "add_ai_tokens") {
-      console.error("❌ Unsupported action:", action);
-      return res.status(400).json({ success: false, message: "Unsupported action" });
     }
 
     const business = await Business.findOne({ business_id });
@@ -199,11 +194,38 @@ router.post("/nxa-billing", async (req, res) => {
       return res.status(404).json({ success: false, message: "Business not found" });
     }
 
-    business.ai_token_balance = (business.ai_token_balance || 0) + amount;
-    await business.save();
+    if (action === "add_ai_tokens") {
+      if (!amount) {
+        console.error("❌ Amount required for add_ai_tokens action");
+        return res.status(400).json({ success: false, message: "Amount required" });
+      }
 
-    console.log(`✅ AI tokens added: ${amount} to business ${business_id}`);
-    res.status(200).json({ success: true, message: "Tokens added successfully" });
+      business.ai_token_balance = (business.ai_token_balance || 0) + amount;
+      await business.save();
+
+      console.log(`✅ AI tokens added: ${amount} to business ${business_id}`);
+      res.status(200).json({ success: true, message: "Tokens added successfully" });
+    } else if (action === "upgrade_plan") {
+      if (!plan) {
+        console.error("❌ Plan required for upgrade_plan action");
+        return res.status(400).json({ success: false, message: "Plan required" });
+      }
+
+      const validPlans = ['physical', 'online', 'full', 'fiziksel'];
+      if (!validPlans.includes(plan)) {
+        console.error("❌ Invalid plan:", plan);
+        return res.status(400).json({ success: false, message: "Invalid plan" });
+      }
+
+      business.plan = plan;
+      await business.save();
+
+      console.log(`✅ Plan upgraded to: ${plan} for business ${business_id}`);
+      res.status(200).json({ success: true, message: "Plan upgraded successfully" });
+    } else {
+      console.error("❌ Unsupported action:", action);
+      return res.status(400).json({ success: false, message: "Unsupported action" });
+    }
   } catch (error) {
     console.error("❌ Webhook processing error:", error);
     res.status(500).json({ success: false, message: "Internal server error" });

@@ -555,6 +555,19 @@ export default function BusinessPage() {
     window.location.href = redirectUrl;
   };
 
+  const handleUpgradePlan = async (plan) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+      return;
+    }
+
+    const nxaDomain = process.env.REACT_APP_NXA_DOMAIN || "https://nxa.example.com";
+    const redirectUrl = `${nxaDomain}/sso?auth_token=${token}&redirect_to=/checkout?productId=plan_${plan}`;
+    
+    window.location.href = redirectUrl;
+  };
+
   const handleRedeemReward = async (e) => {
     e.preventDefault();
     try {
@@ -933,17 +946,7 @@ export default function BusinessPage() {
                     {!canUseOnline && (
                       <button
                         type="button"
-                        onClick={() => {
-                          const bizId =
-                            user?.business_id || user?._id || dash?._id;
-                          if (bizId) {
-                            window.location.href = `https://nxa.com.tr/checkout?biz_id=${bizId}&type=upgrade`;
-                          } else {
-                            toast.error(
-                              "İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.",
-                            );
-                          }
-                        }}
+                        onClick={() => handleUpgradePlan('online')}
                         className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
                       >
                         Paketi Yükselt
@@ -2492,6 +2495,54 @@ export default function BusinessPage() {
               </div>
             </div>
 
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <Award className="w-5 h-5 text-violet-600" />
+                Paket Yönetimi
+              </h3>
+              <div className="p-4 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-lg border border-violet-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      Mevcut Paket
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {dash?.plan === 'full' ? 'Full Paket' : dash?.plan === 'online' ? 'Online Paket' : 'Fiziksel Paket'}
+                    </p>
+                  </div>
+                  <div className="px-3 py-1 bg-violet-600 text-white text-sm font-semibold rounded-full">
+                    {dash?.plan === 'full' ? 'Full' : dash?.plan === 'online' ? 'Online' : 'Fiziksel'}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleUpgradePlan('fiziksel')}
+                    disabled={dash?.plan === 'fiziksel'}
+                    className="p-3 bg-white border-2 border-violet-200 hover:border-violet-400 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="text-sm font-semibold text-violet-700">Fiziksel</div>
+                    <div className="text-xs text-slate-500">Mağaza/Salon</div>
+                  </button>
+                  <button
+                    onClick={() => handleUpgradePlan('online')}
+                    disabled={dash?.plan === 'online'}
+                    className="p-3 bg-white border-2 border-violet-200 hover:border-violet-400 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="text-sm font-semibold text-violet-700">Online</div>
+                    <div className="text-xs text-slate-500">Online Hizmet</div>
+                  </button>
+                  <button
+                    onClick={() => handleUpgradePlan('full')}
+                    disabled={dash?.plan === 'full'}
+                    className="p-3 bg-white border-2 border-violet-200 hover:border-violet-400 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="text-sm font-semibold text-violet-700">Full</div>
+                    <div className="text-xs text-slate-500">Tüm Özellikler</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end">
               <button
                 onClick={handleSaveSettings}
@@ -3310,16 +3361,7 @@ export default function BusinessPage() {
                 {!canUseOnline && (
                   <button
                     type="button"
-                    onClick={() => {
-                      const bizId = user?.business_id || user?._id || dash?._id;
-                      if (bizId) {
-                        window.location.href = `https://nxa.com.tr/checkout?biz_id=${bizId}&type=upgrade`;
-                      } else {
-                        toast.error(
-                          "İşletme kimliği yüklenemedi, lütfen sayfayı yenileyin.",
-                        );
-                      }
-                    }}
+                    onClick={() => handleUpgradePlan('online')}
                     className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-lg shadow-md transition-all"
                   >
                     Paketi Yükselt
