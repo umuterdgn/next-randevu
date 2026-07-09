@@ -104,6 +104,7 @@ export default function BusinessPage() {
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
   const [newServiceConsumedProducts, setNewServiceConsumedProducts] = useState([]);
+  const [newServiceAssignedStaff, setNewServiceAssignedStaff] = useState([]);
   const [staffWorkingHours, setStaffWorkingHours] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
 
@@ -786,13 +787,14 @@ export default function BusinessPage() {
                     process_steps: f.get("process_steps") || "",
                     is_online: f.get("is_online") === "true",
                     consumed_products: newServiceConsumedProducts,
-                    assigned_staff: [],
+                    assigned_staff: newServiceAssignedStaff,
                   };
 
                   await api.post("/business/services", serviceData);
                   toast.success("Servis başarıyla eklendi!");
                   e.currentTarget?.reset();
                   setNewServiceConsumedProducts([]);
+                  setNewServiceAssignedStaff([]);
                   load();
                 } catch (err) {
                   console.error("Hata:", err);
@@ -905,6 +907,33 @@ export default function BusinessPage() {
                     <Plus className="w-4 h-4" />
                     Ürün Ekle
                   </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Bu Hizmeti Verebilecek Personeller
+                </label>
+                <div className="space-y-2">
+                  {staff.map((staffMember) => (
+                    <label key={staffMember._id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newServiceAssignedStaff.includes(staffMember._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewServiceAssignedStaff([...newServiceAssignedStaff, staffMember._id]);
+                          } else {
+                            setNewServiceAssignedStaff(newServiceAssignedStaff.filter(id => id !== staffMember._id));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-slate-700">{staffMember.name}</span>
+                    </label>
+                  ))}
+                  {staff.length === 0 && (
+                    <p className="text-sm text-slate-500 italic">Henüz personel eklenmemiş</p>
+                  )}
                 </div>
               </div>
               {(() => {
@@ -3269,52 +3298,29 @@ export default function BusinessPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Atanmış Personeller
+              Bu Hizmeti Verebilecek Personeller
             </label>
             <div className="space-y-2">
-              {serviceForm.assigned_staff.map((staffId, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <select
-                    value={staffId}
+              {staff.map((staffMember) => (
+                <label key={staffMember._id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={serviceForm.assigned_staff.includes(staffMember._id)}
                     onChange={(e) => {
-                      const newStaff = [...serviceForm.assigned_staff];
-                      newStaff[index] = e.target.value;
-                      setServiceForm({ ...serviceForm, assigned_staff: newStaff });
+                      if (e.target.checked) {
+                        setServiceForm({ ...serviceForm, assigned_staff: [...serviceForm.assigned_staff, staffMember._id] });
+                      } else {
+                        setServiceForm({ ...serviceForm, assigned_staff: serviceForm.assigned_staff.filter(id => id !== staffMember._id) });
+                      }
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Personel seçin</option>
-                    {staff.filter(s => s.role === 'staff').map((s) => (
-                      <option key={s._id} value={s._id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newStaff = serviceForm.assigned_staff.filter((_, i) => i !== index);
-                      setServiceForm({ ...serviceForm, assigned_staff: newStaff });
-                    }}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-700">{staffMember.name}</span>
+                </label>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setServiceForm({
-                    ...serviceForm,
-                    assigned_staff: [...serviceForm.assigned_staff, ""],
-                  });
-                }}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Personel Ekle
-              </button>
+              {staff.length === 0 && (
+                <p className="text-sm text-slate-500 italic">Henüz personel eklenmemiş</p>
+              )}
             </div>
           </div>
           {(() => {

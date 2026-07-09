@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   Briefcase,
   Building2,
@@ -14,14 +15,24 @@ import {
   Package,
 } from "lucide-react";
 
-const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
+const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, businessData }) => {
   const { pathname } = useLocation();
   const active = pathname.startsWith(to);
+  const isLocked = requiresFull && businessData?.plan !== 'full';
+
+  const handleClick = (e) => {
+    if (isLocked) {
+      e.preventDefault();
+      toast.error("Personel Yönetimi özelliği yalnızca Full Paket'te mevcuttur. Paket yüksetmek için lütfen Ayarlar sayfasını ziyaret edin.");
+      return;
+    }
+    onNavigate();
+  };
 
   return (
     <Link
       to={to}
-      onClick={onNavigate}
+      onClick={handleClick}
       className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 overflow-hidden ${active
           ? "bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -31,7 +42,7 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
 
       {/* MOBİL UYUM: Sadece masaüstünde (md) daraltılmışsa yazıyı gizle, mobilde her zaman göster */}
       <span className={`truncate whitespace-nowrap transition-opacity duration-200 ${collapsed ? "md:hidden" : "block"}`}>
-        {label}
+        {label} {isLocked && "🔒"}
       </span>
     </Link>
   );
@@ -58,14 +69,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   ];
 
   const menu = user?.role === "owner" ? ownerMenu : bizMenu;
-
-  // Filter menu items based on plan
-  const filteredMenu = menu.filter((item) => {
-    if (item.requiresFull) {
-      return businessData?.plan === 'full';
-    }
-    return true;
-  });
 
   return (
     <>
@@ -101,7 +104,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         </button>
 
         <nav className="space-y-2">
-          {filteredMenu.map((m) => (
+          {menu.map((m) => (
             <Item
               key={m.to}
               to={m.to}
@@ -109,6 +112,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               icon={m.icon}
               collapsed={collapsed}
               onNavigate={() => setMobileOpen(false)}
+              requiresFull={m.requiresFull}
+              businessData={businessData}
             />
           ))}
         </nav>
