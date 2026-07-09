@@ -37,7 +37,7 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
   );
 };
 
-export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user }) {
+export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user, businessData }) {
   const ownerMenu = [
     { to: "/owner", label: "Owner Dashboard", icon: LayoutDashboard },
     { to: "/owner/applications", label: "Applications", icon: Sparkles },
@@ -49,7 +49,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/services", label: "Services", icon: Briefcase },
     { to: "/business/customers", label: "Customers", icon: Users },
     { to: "/business/appointments", label: "Appointments", icon: CalendarDays },
-    { to: "/business/staff", label: "Personel Yönetimi", icon: Users },
+    { to: "/business/staff", label: "Personel Yönetimi", icon: Users, requiresFull: true },
     { to: "/business/finance", label: "Finance", icon: DollarSign },
     { to: "/business/cari", label: "Cari Hesaplar", icon: Wallet },
     { to: "/business/inventory", label: "Stok Yönetimi", icon: Package },
@@ -58,6 +58,14 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   ];
 
   const menu = user?.role === "owner" ? ownerMenu : bizMenu;
+
+  // Filter menu items based on plan
+  const filteredMenu = menu.filter((item) => {
+    if (item.requiresFull) {
+      return businessData?.plan === 'full';
+    }
+    return true;
+  });
 
   return (
     <>
@@ -93,7 +101,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         </button>
 
         <nav className="space-y-2">
-          {menu.map((m) => (
+          {filteredMenu.map((m) => (
             <Item
               key={m.to}
               to={m.to}
