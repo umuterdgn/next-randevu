@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router-dom";
-import { toast } from "react-hot-toast";
 import {
   Briefcase,
   Building2,
@@ -13,33 +12,20 @@ import {
   DollarSign,
   Settings,
   Package,
-  Crown,
 } from "lucide-react";
 
-const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, businessPlan }) => {
+const Item = ({ to, label, icon: Icon, collapsed, onNavigate }) => {
   const { pathname } = useLocation();
   const active = pathname.startsWith(to);
-  const isLocked = requiresFull && businessPlan !== 'full';
-
-  const handleClick = (e) => {
-    if (isLocked) {
-      e.preventDefault();
-      toast.error("Bu özellik Full Paket'e özeldir. Erişmek için lütfen Sisteminizi yükseltin.", {
-        duration: 4000,
-      });
-      return;
-    }
-    onNavigate();
-  };
 
   return (
     <Link
       to={to}
-      onClick={handleClick}
+      onClick={onNavigate}
       className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 overflow-hidden ${active
           ? "bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-        } ${isLocked ? "opacity-60" : ""}`}
+        }`}
     >
       <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 ${active ? "scale-105" : "group-hover:scale-105"}`} />
 
@@ -47,15 +33,11 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, busi
       <span className={`truncate whitespace-nowrap transition-opacity duration-200 ${collapsed ? "md:hidden" : "block"}`}>
         {label}
       </span>
-
-      {isLocked && !collapsed && (
-        <Crown className="h-4 w-4 text-amber-500 shrink-0 ml-auto" />
-      )}
     </Link>
   );
 };
 
-export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user, businessPlan }) {
+export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user }) {
   const ownerMenu = [
     { to: "/owner", label: "Owner Dashboard", icon: LayoutDashboard },
     { to: "/owner/applications", label: "Applications", icon: Sparkles },
@@ -67,11 +49,11 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/services", label: "Services", icon: Briefcase },
     { to: "/business/customers", label: "Customers", icon: Users },
     { to: "/business/appointments", label: "Appointments", icon: CalendarDays },
-    { to: "/business/staff", label: "Personel Yönetimi", icon: Users, requiresFull: true },
+    { to: "/business/staff", label: "Personel Yönetimi", icon: Users },
     { to: "/business/finance", label: "Finance", icon: DollarSign },
     { to: "/business/cari", label: "Cari Hesaplar", icon: Wallet },
-    { to: "/business/inventory", label: "Stok Yönetimi", icon: Package, requiresFull: true },
-    { to: "/business/campaigns", label: "AI Campaigns", icon: Megaphone, requiresFull: true },
+    { to: "/business/inventory", label: "Stok Yönetimi", icon: Package },
+    { to: "/business/campaigns", label: "AI Campaigns", icon: Megaphone },
     { to: "/business/settings", label: "Ayarlar", icon: Settings },
   ];
 
@@ -119,8 +101,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               icon={m.icon}
               collapsed={collapsed}
               onNavigate={() => setMobileOpen(false)}
-              requiresFull={m.requiresFull}
-              businessPlan={businessPlan}
             />
           ))}
         </nav>

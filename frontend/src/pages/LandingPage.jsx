@@ -152,7 +152,7 @@ export default function LandingPage() {
             {/* Feature 7 - Coming Soon */}
             <div className="group p-8 bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-2xl hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
               <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-xs font-bold rounded-full">
-                Çok Yakında
+                Avantaj Özellik
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Sparkles className="w-7 h-7 text-white" />
@@ -189,8 +189,8 @@ export default function LandingPage() {
                 <p className="text-slate-600 text-sm">Mağaza ve salonlar için ideal</p>
               </div>
               <div className="mb-8">
-                <span className="text-4xl font-bold text-slate-900">₺499</span>
-                <span className="text-slate-600">/ay</span>
+                <span className="text-4xl font-bold text-slate-900">₺15.000</span>
+                <span className="text-slate-600">/yıl</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3">
@@ -233,8 +233,8 @@ export default function LandingPage() {
                 <p className="text-blue-100 text-sm">Online hizmet verenler için</p>
               </div>
               <div className="mb-8">
-                <span className="text-4xl font-bold text-white">₺799</span>
-                <span className="text-blue-100">/ay</span>
+                <span className="text-4xl font-bold text-white">₺13.000</span>
+                <span className="text-blue-100">/yıl</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3">
@@ -274,8 +274,8 @@ export default function LandingPage() {
                 <p className="text-slate-600 text-sm">Büyük işletmeler için kapsamlı</p>
               </div>
               <div className="mb-8">
-                <span className="text-4xl font-bold text-slate-900">₺1299</span>
-                <span className="text-slate-600">/ay</span>
+                <span className="text-4xl font-bold text-slate-900">₺20000</span>
+                <span className="text-slate-600">/yıl</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3">

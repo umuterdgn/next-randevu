@@ -73,7 +73,6 @@ export default function AppLayout({ children }) {
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
         user={user}
-        businessPlan={businessData?.plan}
       />
       <main className="flex-1 p-3 pt-4 sm:p-4 sm:pt-5 md:p-6 lg:p-8">
         <header className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/90 px-4 py-3 shadow-sm shadow-slate-200/70 backdrop-blur">
