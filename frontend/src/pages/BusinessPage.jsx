@@ -2697,14 +2697,6 @@ export default function BusinessPage() {
                     </p>
                   </div>
                 </div>
-                {Math.max(0, creditsRemaining) <= 0 && (
-                  <button
-                    onClick={handleBuyCredit}
-                    className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-xl shadow-lg transition-all flex items-center gap-2"
-                  >
-                    <Gift className="w-4 h-4" /> Ek Kredi Satın Al
-                  </button>
-                )}
               </div>
 
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-fuchsia-100">
@@ -2769,8 +2761,7 @@ export default function BusinessPage() {
                     disabled={
                       isGenerating ||
                       !sector ||
-                      !city ||
-                      Math.max(0, creditsRemaining) <= 0
+                      !city
                     }
                     onClick={async () => {
                       if (!sector || !city) {
@@ -3048,8 +3039,7 @@ export default function BusinessPage() {
                 <button
                   disabled={
                     isGeneratingImage ||
-                    !imagePrompt ||
-                    Math.max(0, creditsRemaining) <= 0
+                    !imagePrompt
                   }
                   onClick={async () => {
                     if (!imagePrompt) {
@@ -3101,21 +3091,6 @@ export default function BusinessPage() {
                     </>
                   )}
                 </button>
-
-                {Math.max(0, creditsRemaining) <= 0 && (
-                  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                    <p className="text-sm text-amber-800 flex items-center gap-2">
-                      <Lock className="w-4 h-4" />
-                      Krediniz bitti. Görsel üretmek için kredi yükleyin.
-                    </p>
-                    <button
-                      onClick={handleBuyCredit}
-                      className="mt-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg shadow-md transition-all flex items-center gap-2"
-                    >
-                      <Gift className="w-4 h-4" /> Kredi Satın Al
-                    </button>
-                  </div>
-                )}
               </div>
 
               {generatedImageUrl && (

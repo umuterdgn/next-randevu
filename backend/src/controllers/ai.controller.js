@@ -18,14 +18,6 @@ export const generateCampaignController = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "İşletme bulunamadı" });
-
-    if (business.ai_campaign_credits <= 0) {
-      return res.status(402).json({
-        success: false,
-        message: "Krediniz bitmiştir. Lütfen paket yükseltin.",
-        creditsRemaining: 0,
-      });
-    }
   }
 
   const data = await generateCampaign(
@@ -71,14 +63,6 @@ export const generateImageController = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "İşletme bulunamadı" });
-
-    if (business.ai_token_balance < 1) {
-      return res.status(403).json({
-        success: false,
-        message: "Yetersiz bakiye. Lütfen AI Görsel jetonu satın alın.",
-        tokensRemaining: business.ai_token_balance || 0,
-      });
-    }
   }
 
   let size = "1024x1024";

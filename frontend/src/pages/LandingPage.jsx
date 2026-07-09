@@ -211,7 +211,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="https://nxa.com.tr/checkout?product=tamvaktinde&plan=fiziksel"
+                href="https://www.nxa.com.tr/urunler"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200 text-center shadow-lg shadow-blue-200"
@@ -255,7 +255,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="https://nxa.com.tr/checkout?product=tamvaktinde&plan=online"
+                href="https://www.nxa.com.tr/urunler"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full px-6 py-3 bg-white hover:bg-blue-50 text-blue-900 font-medium rounded-lg transition-all duration-200 text-center shadow-lg"
@@ -300,7 +300,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <a
-                href="https://nxa.com.tr/checkout?product=tamvaktinde&plan_full"
+                href="https://www.nxa.com.tr/urunler"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200 text-center shadow-lg shadow-blue-200"
