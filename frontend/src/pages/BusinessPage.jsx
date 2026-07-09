@@ -39,6 +39,7 @@ import {
   Copy,
   Plus,
   X,
+  Upload,
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import { useAuth } from "../context/AuthContext";
@@ -138,6 +139,8 @@ export default function BusinessPage() {
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [customMessage, setCustomMessage] = useState("");
   const [logoFile, setLogoFile] = useState(null);
+  const [csvFile, setCsvFile] = useState(null);
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false);
 
   // AI Visual Studio States
   const [imagePrompt, setImagePrompt] = useState("");
@@ -535,6 +538,32 @@ export default function BusinessPage() {
     } catch (error) {
       console.error("🔥 KAYIT HATASI DETAYI:", error.response?.data || error);
       toast.error("Ayarlar güncellenirken hata oluştu");
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!csvFile) {
+      toast.error("Lütfen bir CSV dosyası seçin.");
+      return;
+    }
+
+    setIsUploadingCsv(true);
+    try {
+      const formData = new FormData();
+      formData.append("contacts", csvFile);
+
+      const response = await api.post("/business/upload-contacts", formData);
+
+      if (response.data.success) {
+        toast.success(`${response.data.importedCount} müşteri başarıyla içe aktarıldı!`);
+        setCsvFile(null);
+        load(); // Reload customers
+      }
+    } catch (error) {
+      console.error("CSV upload error:", error);
+      toast.error(error.response?.data?.message || "CSV yüklenirken bir hata oluştu.");
+    } finally {
+      setIsUploadingCsv(false);
     }
   };
 
@@ -2477,6 +2506,58 @@ export default function BusinessPage() {
                     />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
                   </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                Müşteri Rehberi İçe Aktar
+              </h3>
+              <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+                <p className="text-sm text-slate-700 mb-4">
+                  Müşterilerinizi toplu mesaj listesine eklemek için İsim ve Telefon numarası içeren bir CSV dosyası yükleyin.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setCsvFile(e.target.files[0])}
+                      className="w-full px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    />
+                    {csvFile && (
+                      <p className="text-xs text-slate-600 mt-1">
+                        Seçilen: {csvFile.name}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleFileUpload}
+                    disabled={!csvFile || isUploadingCsv}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+                  >
+                    {isUploadingCsv ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        İçe Aktarılıyor...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5" />
+                        CSV İçe Aktar
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="mt-3 p-3 bg-emerald-100/50 rounded-lg border border-emerald-200">
+                  <p className="text-xs text-emerald-800 flex items-start gap-2">
+                    <span className="text-sm">📋</span>
+                    <span>
+                      CSV dosyası şu sütunları içermelidir: Name (İsim) ve Phone (Telefon). Örnek format: "Ahmet Yılmaz,05551234567"
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>

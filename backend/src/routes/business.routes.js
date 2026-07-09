@@ -27,6 +27,7 @@ import {
   getStaffAppointments,
   getStaffPerformance,
   updateAppointment,
+  uploadContacts,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -302,6 +303,7 @@ router.get(
 
 router.put("/settings", asyncHandler(updateBusinessSettingsController));
 router.patch("/logo", upload.single("logo"), asyncHandler(uploadLogo));
+router.post("/upload-contacts", upload.single("contacts"), asyncHandler(uploadContacts));
 router.get("/staff", asyncHandler(listStaff));
 router.post("/staff", asyncHandler(addStaff));
 router.put("/staff/:id", asyncHandler(updateStaff));

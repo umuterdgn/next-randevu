@@ -973,3 +973,85 @@ export const deleteProduct = async (req, res) => {
     res.status(400).json({ success: false, message: "Ürün silinemedi." });
   }
 };
+
+export const uploadContacts = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Lütfen bir CSV dosyası seçin." });
+    }
+
+    const fs = await import('fs');
+    const csv = await import('csv-parser');
+    const { Readable } = await import('stream');
+
+    const results = [];
+    const readableStream = Readable.from(req.file.buffer.toString('utf-8'));
+
+    await new Promise((resolve, reject) => {
+      readableStream
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    let importedCount = 0;
+    let duplicateCount = 0;
+
+    for (const row of results) {
+      // Try to find name and phone from various possible column names
+      const name = row['Name'] || row['İsim'] || row['name'] || row['isim'] || '';
+      let phone = row['Phone'] || row['Telefon'] || row['phone'] || row['telefon'] || '';
+
+      if (!name || !phone) {
+        continue;
+      }
+
+      // Clean phone number - remove spaces, dashes, parentheses
+      phone = phone.replace(/[\s\-\(\)]/g, '');
+
+      // Ensure country code for Turkey if not present
+      if (phone.startsWith('0')) {
+        phone = '90' + phone.substring(1);
+      } else if (!phone.startsWith('90') && phone.length === 10) {
+        phone = '90' + phone;
+      }
+
+      try {
+        // Use findOneAndUpdate with upsert to avoid duplicates
+        await Customer.findOneAndUpdate(
+          { business_id: req.business_id, phone },
+          { name, phone, business_id: req.business_id },
+          { upsert: true, new: true }
+        );
+        importedCount++;
+      } catch (error) {
+        if (error.code === 11000) {
+          duplicateCount++;
+        }
+      }
+    }
+
+    await logAudit({
+      business_id: req.business_id,
+      user_id: req.user?._id || null,
+      action: "CONTACTS_IMPORTED",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+      meta: { imported_count: importedCount, duplicate_count: duplicateCount },
+    });
+
+    res.json({
+      success: true,
+      message: `${importedCount} müşteri başarıyla içe aktarıldı.`,
+      importedCount,
+      duplicateCount,
+    });
+  } catch (error) {
+    console.error("CSV upload error:", error);
+    res.status(500).json({ success: false, message: "CSV yüklenirken bir hata oluştu." });
+  }
+};
