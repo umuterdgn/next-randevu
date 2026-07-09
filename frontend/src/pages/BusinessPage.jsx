@@ -88,6 +88,34 @@ export default function BusinessPage() {
     else navigate(`/business/${tab}`);
   };
 
+  // Plan-based access check for premium features
+  const premiumTabs = ["staff", "inventory", "campaigns"];
+  const isPremiumTab = premiumTabs.includes(activeTab);
+  const hasFullPlan = dash?.plan === 'full';
+
+  if (isPremiumTab && !hasFullPlan) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-violet-200">
+          <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Award className="w-10 h-10 text-violet-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-3">Full Paket Gerekli</h1>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            Bu özellik Full Paket'e özeldir. Personel yönetimi, stok takibi ve AI kampanyalar gibi premium özelliklere erişmek için paketinizi yükseltin.
+          </p>
+          <button
+            onClick={() => handleUpgradePlan('full')}
+            className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <Award className="w-5 h-5" />
+            Full Pakete Yükselt
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // State Yönetimi
   const [dash, setDash] = useState(null);
   const [services, setServices] = useState([]);

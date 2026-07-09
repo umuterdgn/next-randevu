@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Package, Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { Package, Plus, Edit, Trash2, Save, X, Award } from "lucide-react";
 import { toast } from "react-toastify";
 import { getProducts, addProduct, updateProduct, deleteProduct } from "../api/product";
+import api from "../api/client";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState([]);
@@ -12,6 +13,8 @@ export default function InventoryPage() {
     stock: 0,
     unit: "adet",
   });
+  const [businessData, setBusinessData] = useState(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
 
   const loadProducts = async () => {
     try {
@@ -26,6 +29,64 @@ export default function InventoryPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    const fetchBusinessData = async () => {
+      try {
+        const response = await api.get("/business/settings");
+        setBusinessData(response.data);
+      } catch (error) {
+        console.error("Business data fetch error:", error);
+      } finally {
+        setLoadingBusiness(false);
+      }
+    };
+    fetchBusinessData();
+  }, []);
+
+  const handleUpgradePlan = async (plan) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+      return;
+    }
+
+    const nxaDomain = process.env.REACT_APP_NXA_DOMAIN || "https://nxa.example.com";
+    const redirectUrl = `${nxaDomain}/sso?auth_token=${token}&redirect_to=/checkout?productId=plan_${plan}`;
+    
+    window.location.href = redirectUrl;
+  };
+
+  if (loadingBusiness) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-slate-500">Yükleniyor...</div>
+      </div>
+    );
+  }
+
+  if (businessData?.plan !== 'full') {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-violet-200">
+          <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Award className="w-10 h-10 text-violet-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-3">Full Paket Gerekli</h1>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            Bu özellik Full Paket'e özeldir. Stok yönetimi gibi premium özelliklere erişmek için paketinizi yükseltin.
+          </p>
+          <button
+            onClick={() => handleUpgradePlan('full')}
+            className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <Award className="w-5 h-5" />
+            Full Pakete Yükselt
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleAdd = () => {
     setEditingProduct(null);
