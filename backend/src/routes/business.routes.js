@@ -138,8 +138,8 @@ router.post(
 
         successCount++;
         console.log(`✅ BAŞARILI: ${customer.phone}`);
-        // Spam yememek için 1.5 saniye mola
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Spam yememek için 30-60 saniye aralıklı mola
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 30000 + 30000));
       } catch (error) {
         console.error(
           `❌ HATA (${customer.phone}):`,

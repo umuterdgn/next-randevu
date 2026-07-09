@@ -72,11 +72,11 @@ export const generateImageController = async (req, res) => {
         .status(404)
         .json({ success: false, message: "İşletme bulunamadı" });
 
-    if (business.ai_campaign_credits <= 0) {
+    if (business.ai_token_balance < 1) {
       return res.status(403).json({
         success: false,
-        message: "Yetersiz kredi. Lütfen kredi yükleyin.",
-        creditsRemaining: 0,
+        message: "Yetersiz bakiye. Lütfen AI Görsel jetonu satın alın.",
+        tokensRemaining: business.ai_token_balance || 0,
       });
     }
   }
@@ -151,11 +151,11 @@ export const generateImageController = async (req, res) => {
     if (businessId) {
       await Business.updateOne(
         { business_id: businessId },
-        { $inc: { ai_campaign_credits: -1, ai_usage_count: 1 } },
+        { $inc: { ai_token_balance: -1, ai_usage_count: 1 } },
       );
 
       const business = await Business.findOne({ business_id: businessId });
-      const remainingCredits = Math.max(0, business?.ai_campaign_credits || 0);
+      const remainingTokens = Math.max(0, business?.ai_token_balance || 0);
 
       await logAudit({
         business_id: businessId || "saas_root",
@@ -169,9 +169,9 @@ export const generateImageController = async (req, res) => {
         meta: { prompt, source: imageUrl },
       });
 
-      res.json({ success: true, imageUrl, remainingCredits });
+      res.json({ success: true, imageUrl, remainingTokens });
     } else {
-      res.json({ success: true, imageUrl, remainingCredits: null });
+      res.json({ success: true, imageUrl, remainingTokens: null });
     }
   } catch (error) {
     console.error("DALL-E Error:", error);

@@ -17,7 +17,7 @@ const businessSchema = new mongoose.Schema(
     is_loyalty_enabled: { type: Boolean, default: true },
     theme_color: { type: String, default: "#3B82F6" },
     ai_usage_count: { type: Number, default: 0, min: 0 },
-    ai_campaign_credits: { type: Number, default: 5, min: 0 },
+    ai_token_balance: { type: Number, default: 0, min: 0 },
     logo_url: { type: String, default: "" },
     is_active: { type: Boolean, default: true },
     whatsapp_token: { type: String, default: "" },

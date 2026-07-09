@@ -165,4 +165,49 @@ router.post("/whatsapp", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/webhooks/nxa-billing
+ * NXA Billing Webhook - Secure endpoint for adding AI tokens after successful payment
+ * Secured by x-nxa-webhook-secret header
+ */
+router.post("/nxa-billing", async (req, res) => {
+  try {
+    const webhookSecret = req.headers["x-nxa-webhook-secret"];
+    const expectedSecret = process.env.NXA_WEBHOOK_SECRET;
+
+    if (!webhookSecret || webhookSecret !== expectedSecret) {
+      console.error("❌ Invalid webhook secret received");
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { business_id, action, amount } = req.body;
+
+    if (!business_id || !action || !amount) {
+      console.error("❌ Invalid webhook payload:", req.body);
+      return res.status(400).json({ success: false, message: "Invalid payload" });
+    }
+
+    if (action !== "add_ai_tokens") {
+      console.error("❌ Unsupported action:", action);
+      return res.status(400).json({ success: false, message: "Unsupported action" });
+    }
+
+    const business = await Business.findOne({ business_id });
+
+    if (!business) {
+      console.error("❌ Business not found:", business_id);
+      return res.status(404).json({ success: false, message: "Business not found" });
+    }
+
+    business.ai_token_balance = (business.ai_token_balance || 0) + amount;
+    await business.save();
+
+    console.log(`✅ AI tokens added: ${amount} to business ${business_id}`);
+    res.status(200).json({ success: true, message: "Tokens added successfully" });
+  } catch (error) {
+    console.error("❌ Webhook processing error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 export default router;

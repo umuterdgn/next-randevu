@@ -144,6 +144,7 @@ export default function BusinessPage() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState("");
   const [imageFormat, setImageFormat] = useState("post");
+  const [showTokenModal, setShowTokenModal] = useState(false);
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -538,18 +539,20 @@ export default function BusinessPage() {
   };
 
   const handleBuyCredit = async () => {
-    const loadingToast = toast.loading("Ödeme sayfasına yönlendiriliyor...");
-    try {
-      const response = await api.post("/payment/buy-credits");
-      if (response.data.success && response.data.payment_link) {
-        toast.dismiss(loadingToast);
-        window.location.href = response.data.payment_link;
-      }
-    } catch (error) {
-      toast.error("Ödeme linki oluşturulurken hata oluştu.", {
-        id: loadingToast,
-      });
+    setShowTokenModal(true);
+  };
+
+  const handleBuyTokens = async (amount) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+      return;
     }
+
+    const nxaDomain = process.env.REACT_APP_NXA_DOMAIN || "https://nxa.example.com";
+    const redirectUrl = `${nxaDomain}/sso?auth_token=${token}&redirect_to=/checkout?productId=ai_token_${amount}`;
+    
+    window.location.href = redirectUrl;
   };
 
   const handleRedeemReward = async (e) => {
@@ -3000,6 +3003,31 @@ export default function BusinessPage() {
         confirmText="Sil"
         cancelText="İptal"
       />
+
+      <Modal
+        isOpen={showTokenModal}
+        onClose={() => setShowTokenModal(false)}
+        title="AI Görsel Jetonu Satın Al"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            AI görsel üretimi için jeton paketleri seçin. Her görsel üretimi 1 jeton harcar.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[5, 10, 15, 20, 50].map((amount) => (
+              <button
+                key={amount}
+                onClick={() => handleBuyTokens(amount)}
+                className="p-4 bg-gradient-to-br from-violet-50 to-indigo-50 border-2 border-violet-200 hover:border-violet-400 hover:shadow-lg rounded-xl transition-all duration-300 flex flex-col items-center gap-2 group"
+              >
+                <div className="text-3xl">🪙</div>
+                <div className="text-2xl font-bold text-violet-700">{amount}</div>
+                <div className="text-xs text-slate-500">Jeton</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={showServiceEditModal}
