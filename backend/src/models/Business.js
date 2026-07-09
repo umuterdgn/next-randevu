@@ -24,6 +24,7 @@ const businessSchema = new mongoose.Schema(
     whatsapp_phone_number_id: { type: String, default: "" },
     wa_phone_number_id: { type: String, trim: true },
     agency_id: { type: mongoose.Schema.Types.ObjectId, ref: "Agent", default: null, index: true },
+    parent_business_id: { type: mongoose.Schema.Types.ObjectId, ref: "Business", default: null, index: true },
 
     workingHours: {
       monday: {
@@ -84,7 +85,7 @@ const businessSchema = new mongoose.Schema(
     google_calendar_tokens: { type: Object },
     plan: {
       type: String,
-      enum: ['physical', 'online', 'full'],
+      enum: ['physical', 'online', 'full', 'enterprise'],
       default: 'physical'
     },
     extraFeatures: {

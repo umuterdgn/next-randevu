@@ -28,6 +28,8 @@ import {
   getStaffPerformance,
   updateAppointment,
   uploadContacts,
+  createBranch,
+  listBranches,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -316,6 +318,10 @@ router.get("/products", asyncHandler(listProducts));
 router.post("/products", asyncHandler(addProduct));
 router.put("/products/:id", asyncHandler(updateProduct));
 router.delete("/products/:id", asyncHandler(deleteProduct));
+
+// Branch routes (Enterprise only)
+router.post("/branches", asyncHandler(createBranch));
+router.get("/branches", asyncHandler(listBranches));
 
 // Staff routes
 router.get("/staff/appointments", requireAuth, requireRole("staff"), asyncHandler(getStaffAppointments));

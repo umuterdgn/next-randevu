@@ -21,9 +21,12 @@ import StaffDashboard from "./pages/StaffDashboard";
 import Protected from "./components/Protected";
 import ApplyProtected from "./components/ApplyProtected";
 
+// Context Providers
+import { BranchProvider } from "./context/BranchContext";
+
 export default function App() {
   return (
-    <>
+    <BranchProvider>
       <Routes>
         {/* Herkese Açık Sayfalar */}
         <Route path="/" element={<LandingPage />} />
@@ -83,6 +86,6 @@ export default function App() {
         <Route path="/:slug" element={<BookingPage />} />
       </Routes>
       <Toaster position="top-right" toastOptions={{ duration: 3000, style: { background: '#333', color: '#fff', borderRadius: '10px' } }} />
-    </>
+    </BranchProvider>
   );
 }

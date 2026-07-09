@@ -15,15 +15,21 @@ import {
   Package,
 } from "lucide-react";
 
-const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, businessData }) => {
+const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, requiresEnterprise, businessData }) => {
   const { pathname } = useLocation();
   const active = pathname.startsWith(to);
   const isLocked = requiresFull && businessData?.plan !== 'full';
+  const isEnterpriseLocked = requiresEnterprise && businessData?.plan !== 'enterprise';
 
   const handleClick = (e) => {
     if (isLocked) {
       e.preventDefault();
       toast.error("Personel Yönetimi özelliği yalnızca Full Paket'te mevcuttur. Paket yüksetmek için lütfen Ayarlar sayfasını ziyaret edin.");
+      return;
+    }
+    if (isEnterpriseLocked) {
+      e.preventDefault();
+      toast.error("Şube yönetimi özelliği yalnızca Enterprise paketinde mevcuttur.");
       return;
     }
     onNavigate();
@@ -42,7 +48,7 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, busi
 
       {/* MOBİL UYUM: Sadece masaüstünde (md) daraltılmışsa yazıyı gizle, mobilde her zaman göster */}
       <span className={`truncate whitespace-nowrap transition-opacity duration-200 ${collapsed ? "md:hidden" : "block"}`}>
-        {label} {isLocked && "🔒"}
+        {label} {isLocked && "🔒"} {isEnterpriseLocked && "🔒"}
       </span>
     </Link>
   );
@@ -61,6 +67,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/customers", label: "Customers", icon: Users },
     { to: "/business/appointments", label: "Appointments", icon: CalendarDays },
     { to: "/business/staff", label: "Personel Yönetimi", icon: Users, requiresFull: true },
+    { to: "/business/branches", label: "Şubelerim", icon: Building2, requiresEnterprise: true },
     { to: "/business/finance", label: "Finance", icon: DollarSign },
     { to: "/business/cari", label: "Cari Hesaplar", icon: Wallet },
     { to: "/business/inventory", label: "Stok Yönetimi", icon: Package },
@@ -113,6 +120,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               collapsed={collapsed}
               onNavigate={() => setMobileOpen(false)}
               requiresFull={m.requiresFull}
+              requiresEnterprise={m.requiresEnterprise}
               businessData={businessData}
             />
           ))}

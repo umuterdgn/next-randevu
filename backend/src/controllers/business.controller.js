@@ -1055,3 +1055,86 @@ export const uploadContacts = async (req, res) => {
     res.status(500).json({ success: false, message: "CSV yüklenirken bir hata oluştu." });
   }
 };
+
+export const createBranch = async (req, res) => {
+  try {
+    const { name, phone, email, city, address } = req.body;
+    const parentBusinessId = req.business_id || req.user?.business_id;
+
+    if (!name || !phone || !email) {
+      return res.status(400).json({ success: false, message: "İsim, telefon ve e-posta zorunludur." });
+    }
+
+    // Verify parent business exists and is enterprise
+    const parentBusiness = await Business.findOne({ business_id: parentBusinessId });
+    if (!parentBusiness) {
+      return res.status(404).json({ success: false, message: "Ana işletme bulunamadı." });
+    }
+
+    if (parentBusiness.plan !== 'enterprise') {
+      return res.status(403).json({ success: false, message: "Bu özellik sadece Enterprise paketi için kullanılabilir." });
+    }
+
+    // Generate unique business_id for branch
+    const branchId = `BIZ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    const branch = await Business.create({
+      business_id: branchId,
+      parent_business_id: parentBusiness._id,
+      name,
+      phone,
+      email,
+      city: city || "",
+      address: address || "",
+      sector: parentBusiness.sector,
+      plan: parentBusiness.plan,
+      theme_color: parentBusiness.theme_color,
+      is_active: true,
+    });
+
+    await logAudit({
+      business_id: parentBusinessId,
+      user_id: req.user?._id || null,
+      action: "BRANCH_CREATED",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+      meta: { branch_id: branch.business_id, branch_name: name },
+    });
+
+    res.json({
+      success: true,
+      message: "Şube başarıyla oluşturuldu.",
+      branch,
+    });
+  } catch (error) {
+    console.error("Branch creation error:", error);
+    res.status(500).json({ success: false, message: "Şube oluşturulurken bir hata oluştu." });
+  }
+};
+
+export const listBranches = async (req, res) => {
+  try {
+    const parentBusinessId = req.business_id || req.user?.business_id;
+
+    const parentBusiness = await Business.findOne({ business_id: parentBusinessId });
+    if (!parentBusiness) {
+      return res.status(404).json({ success: false, message: "İşletme bulunamadı." });
+    }
+
+    const branches = await Business.find({ parent_business_id: parentBusiness._id })
+      .select('business_id name phone email city address is_active createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      branches,
+      count: branches.length,
+    });
+  } catch (error) {
+    console.error("Branch listing error:", error);
+    res.status(500).json({ success: false, message: "Şubeler listelenirken bir hata oluştu." });
+  }
+};
