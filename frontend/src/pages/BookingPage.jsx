@@ -448,7 +448,6 @@ const BookingPage = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    required
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors"
                     placeholder="ornek@email.com"
                   />

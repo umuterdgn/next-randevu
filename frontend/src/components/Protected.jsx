@@ -12,13 +12,13 @@ export default function Protected({ children, role }) {
     return <Navigate to="/login" />;
   }
 
-  // Redirect staff members trying to access business owner routes
+  // Redirect staff members trying to access business owner routes (but allow cashier)
   if (user.role === "staff" && role !== "staff") {
     return <Navigate to="/staff/dashboard" />;
   }
 
-  // Allow business, business_admin, and cashier roles to access business routes
-  if (role && user.role !== role && !(role === "admin" && (user.role === "business" || user.role === "business_admin" || user.role === "cashier"))) {
+  // Allow business, business_admin, cashier, and admin roles to access business routes
+  if (role && user.role !== role && !(role === "admin" && (user.role === "business" || user.role === "business_admin" || user.role === "cashier" || user.role === "admin"))) {
     return <Navigate to={user.role === "owner" ? "/owner" : "/business"};
   }
   return children;

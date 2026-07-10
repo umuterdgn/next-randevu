@@ -212,11 +212,10 @@ export default function Branches() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              E-posta *
+              E-posta
             </label>
             <input
               type="email"
-              required
               value={branchForm.email}
               onChange={(e) => setBranchForm({ ...branchForm, email: e.target.value })}
               className="input w-full"
