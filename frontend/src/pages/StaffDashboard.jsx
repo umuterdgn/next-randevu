@@ -123,7 +123,7 @@ export default function StaffDashboard() {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <p className="text-slate-500 mt-2">Yükleniyor...</p>
           </div>
-        ) : appointments.length === 0 ? (
+        ) : !appointments || appointments.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-700 mb-2">
@@ -137,7 +137,7 @@ export default function StaffDashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => (
+            {appointments?.map((appointment) => (
               <div
                 key={appointment._id}
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"

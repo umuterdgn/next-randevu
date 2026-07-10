@@ -105,7 +105,12 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { to: "/business/settings", label: "Ayarlar", icon: Settings },
   ];
 
-  const menu = user?.role === "owner" ? ownerMenu : bizMenu;
+  const cashierMenu = [
+    { to: "/business/appointments", label: "Randevular", icon: CalendarDays },
+    { to: "/business/customers", label: "Müşteriler", icon: Users },
+  ];
+
+  const menu = user?.role === "owner" ? ownerMenu : user?.role === "cashier" ? cashierMenu : bizMenu;
 
   return (
     <>

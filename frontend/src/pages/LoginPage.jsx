@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   if (user) {
     if (user.role === "owner") return <Navigate to="/owner" />;
-    if (user.role === "business") return <Navigate to="/business" />;
+    if (user.role === "business" || user.role === "cashier") return <Navigate to="/business" />;
     return <Navigate to="/business" />;
   }
 
