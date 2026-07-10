@@ -4,6 +4,7 @@ import { Customer } from "../models/Customer.js";
 import { RewardCode } from "../models/RewardCode.js";
 import { Service } from "../models/Service.js";
 import { createError } from "../utils/appError.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 export const getDashboardStats = async (business_id) => {
   // Check if business_id is 'pending' (SSO user without business)
@@ -219,6 +220,22 @@ export const createAppointment = async (business_id, payload) => {
       status: status || "pending",
       note: note || "",
     });
+
+    // Send email notification to business owner
+    try {
+      const business = await Business.findOne({ business_id });
+      if (business && business.email) {
+        await sendEmail({
+          email: business.email,
+          subject: "Yeni Randevu Geldi",
+          message: `Yeni randevu oluşturuldu:\nMüşteri: ${customer.name}\nTelefon: ${customer.phone}\nHizmet: ${service.name}\nTarih: ${start.toLocaleString('tr-TR')}\nDurum: ${status || "pending"}`,
+        });
+      }
+    } catch (emailError) {
+      console.error("Appointment email notification error:", emailError);
+      // Don't fail the request if email fails
+    }
+
     return appointment;
   }
 

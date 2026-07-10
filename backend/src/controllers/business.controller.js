@@ -1061,8 +1061,8 @@ export const createBranch = async (req, res) => {
     const { name, phone, email, city, address } = req.body;
     const parentBusinessId = req.business_id || req.user?.business_id;
 
-    if (!name || !phone || !email) {
-      return res.status(400).json({ success: false, message: "İsim, telefon ve e-posta zorunludur." });
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, message: "İsim ve telefon zorunludur." });
     }
 
     // Verify parent business exists and is enterprise

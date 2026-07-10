@@ -131,8 +131,7 @@ router.post(
     if (
       !customer.firstName ||
       !customer.lastName ||
-      !customer.phone ||
-      !customer.email
+      !customer.phone
     ) {
       return res
         .status(400)
@@ -168,7 +167,6 @@ router.post(
 
     let existingCustomer = await Customer.findOne({
       business_id: business.business_id, // DÜZELTME
-      email: customer.email,
       phone: customer.phone,
     });
 
@@ -177,7 +175,7 @@ router.post(
         business_id: business.business_id, // DÜZELTME
         name: `${customer.firstName} ${customer.lastName}`,
         phone: customer.phone,
-        email: customer.email,
+        email: customer.email || "",
       });
     }
 

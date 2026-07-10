@@ -13,6 +13,7 @@ export const createCustomerRules = [
   body("name").trim().notEmpty().withMessage("Customer name is required"),
   body("phone").trim().notEmpty().withMessage("Phone is required"),
   body("email").optional({ values: "falsy" }).isEmail().withMessage("Email must be valid"),
+  body("email").optional({ nullable: true, checkFalsy: true }),
 ];
 
 export const createAppointmentRules = [

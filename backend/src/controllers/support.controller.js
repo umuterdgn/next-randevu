@@ -1,6 +1,7 @@
 import { SupportTicket } from "../models/SupportTicket.js";
 import { Business } from "../models/Business.js";
 import { logAudit } from "../services/audit.service.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 export const createSupportTicket = async (req, res) => {
   try {
@@ -36,6 +37,22 @@ export const createSupportTicket = async (req, res) => {
       user_agent: req.headers["user-agent"] || "",
       meta: { ticket_id: ticket._id },
     });
+
+    // Send email to admin
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'support@nxa.com.tr';
+      const subject = `[Nexa Destek] ${business.name} - Yeni Bildirim`;
+      const text = `İşletme: ${business.name}\nMesaj: ${message.trim()}`;
+      
+      await sendEmail({
+        email: adminEmail,
+        subject: subject,
+        message: text,
+      });
+    } catch (emailError) {
+      console.error("Support email sending error:", emailError);
+      // Don't fail the request if email fails
+    }
 
     res.status(201).json({
       success: true,
