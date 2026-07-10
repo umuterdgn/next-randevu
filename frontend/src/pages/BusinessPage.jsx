@@ -1368,6 +1368,7 @@ export default function BusinessPage() {
                   defaultValue={editingStaff?.role}
                 >
                   <option value="staff">Personel</option>
+                  <option value="cashier">Kasa (Cashier)</option>
                   <option value="dealer">Bayi</option>
                 </select>
                 <input
