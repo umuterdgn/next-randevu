@@ -159,10 +159,24 @@ export default function BusinessPage() {
     address: "",
   });
 
+  // Walk-in Modal States
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [walkInPhone, setWalkInPhone] = useState("");
+  const [walkInCustomer, setWalkInCustomer] = useState(null);
+  const [walkInNewCustomer, setWalkInNewCustomer] = useState({ name: "", phone: "" });
+  const [walkInServices, setWalkInServices] = useState([]);
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
+
+  // Extra Service Modal States
+  const [showExtraServiceModal, setShowExtraServiceModal] = useState(false);
+  const [selectedAppointmentForExtra, setSelectedAppointmentForExtra] = useState(null);
+  const [extraServicesToAdd, setExtraServicesToAdd] = useState([]);
+
   // AI Visual Studio States
   const [imagePrompt, setImagePrompt] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState("");
+  const [compositeImageUrl, setCompositeImageUrl] = useState("");
   const [imageFormat, setImageFormat] = useState("post");
   const [showTokenModal, setShowTokenModal] = useState(false);
 
@@ -625,6 +639,163 @@ export default function BusinessPage() {
     } catch (error) {
       console.error("Branch deletion error:", error);
       toast.error("Şube silinirken hata oluştu.");
+    }
+  };
+
+  const handleSearchCustomer = async () => {
+    if (!walkInPhone || walkInPhone.length < 10) {
+      toast.error("Lütfen geçerli bir telefon numarası girin.");
+      return;
+    }
+    try {
+      setSearchingCustomer(true);
+      const { data } = await api.get(`/business/customers?phone=${walkInPhone}`);
+      if (data.success && data.customers && data.customers.length > 0) {
+        setWalkInCustomer(data.customers[0]);
+        setWalkInNewCustomer({ name: "", phone: "" });
+        toast.success("Müşteri bulundu!");
+      } else {
+        setWalkInCustomer(null);
+        setWalkInNewCustomer({ name: "", phone: walkInPhone });
+        toast.info("Müşteri bulunamadı. Yeni müşteri kaydedilecek.");
+      }
+    } catch (error) {
+      console.error("Customer search error:", error);
+      setWalkInCustomer(null);
+      setWalkInNewCustomer({ name: "", phone: walkInPhone });
+      toast.info("Müşteri bulunamadı. Yeni müşteri kaydedilecek.");
+    } finally {
+      setSearchingCustomer(false);
+    }
+  };
+
+  const handleCreateWalkIn = async () => {
+    if (!walkInCustomer && (!walkInNewCustomer.name || !walkInNewCustomer.phone)) {
+      toast.error("Lütfen müşteri bilgilerini girin.");
+      return;
+    }
+    if (walkInServices.length === 0) {
+      toast.error("Lütfen en az bir hizmet seçin.");
+      return;
+    }
+
+    try {
+      let customerId = walkInCustomer?._id;
+
+      // Create new customer if not found
+      if (!customerId) {
+        const { data: newCustomerData } = await api.post("/business/customers", walkInNewCustomer);
+        if (newCustomerData.success) {
+          customerId = newCustomerData.customer._id;
+        } else {
+          throw new Error("Müşteri oluşturulamadı.");
+        }
+      }
+
+      // Create appointment for each selected service
+      for (const serviceId of walkInServices) {
+        const service = services.find((s) => s._id === serviceId);
+        if (!service) continue;
+
+        const now = new Date();
+        const startTime = new Date(now);
+        const endTime = new Date(now.getTime() + service.duration * 60000);
+
+        await api.post("/business/appointments", {
+          customer_id: customerId,
+          service_id: serviceId,
+          staff_id: null,
+          starts_at: startTime.toISOString(),
+          ends_at: endTime.toISOString(),
+          status: "completed",
+          note: "Hızlı müşteri (walk-in)",
+        });
+      }
+
+      toast.success("Randevu başarıyla oluşturuldu!");
+      setShowWalkInModal(false);
+      setWalkInPhone("");
+      setWalkInCustomer(null);
+      setWalkInNewCustomer({ name: "", phone: "" });
+      setWalkInServices([]);
+      load(); // Reload appointments
+    } catch (error) {
+      console.error("Walk-in creation error:", error);
+      toast.error(error.response?.data?.message || "Randevu oluşturulurken hata oluştu.");
+    }
+  };
+
+  const handleAddExtraServices = async () => {
+    if (!selectedAppointmentForExtra || extraServicesToAdd.length === 0) {
+      toast.error("Lütfen en az bir hizmet seçin.");
+      return;
+    }
+
+    try {
+      const { data } = await api.patch(`/business/appointments/${selectedAppointmentForExtra._id}/extra-services`, {
+        service_ids: extraServicesToAdd,
+      });
+
+      if (data.success) {
+        toast.success("Ek hizmetler başarıyla eklendi!");
+        setShowExtraServiceModal(false);
+        setSelectedAppointmentForExtra(null);
+        setExtraServicesToAdd([]);
+        loadAppointments();
+      }
+    } catch (error) {
+      console.error("Extra services addition error:", error);
+      toast.error(error.response?.data?.message || "Ek hizmetler eklenirken hata oluştu.");
+    }
+  };
+
+  const applyLogoOverlay = async (imageUrl) => {
+    if (!businessData?.logo_url) {
+      setCompositeImageUrl(imageUrl);
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const mainImage = new Image();
+      mainImage.crossOrigin = "Anonymous";
+      
+      const logoImage = new Image();
+      logoImage.crossOrigin = "Anonymous";
+
+      await Promise.all([
+        new Promise((resolve, reject) => {
+          mainImage.onload = resolve;
+          mainImage.onerror = reject;
+          mainImage.src = imageUrl;
+        }),
+        new Promise((resolve, reject) => {
+          logoImage.onload = resolve;
+          logoImage.onerror = reject;
+          logoImage.src = businessData.logo_url;
+        })
+      ]);
+
+      canvas.width = mainImage.width;
+      canvas.height = mainImage.height;
+
+      ctx.drawImage(mainImage, 0, 0);
+
+      // Draw logo in bottom-right corner
+      const logoSize = Math.min(canvas.width, canvas.height) * 0.15;
+      const padding = 20;
+      const logoX = canvas.width - logoSize - padding;
+      const logoY = canvas.height - logoSize - padding;
+
+      ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+
+      const compositeDataUrl = canvas.toDataURL('image/png');
+      setCompositeImageUrl(compositeDataUrl);
+    } catch (error) {
+      console.error("Logo overlay error:", error);
+      setCompositeImageUrl(imageUrl);
     }
   };
 
@@ -1678,6 +1849,12 @@ export default function BusinessPage() {
                 Hızlı Randevu Oluştur
               </button>
               <button
+                onClick={() => setShowWalkInModal(true)}
+                className="btn-success whitespace-nowrap px-6"
+              >
+                Hızlı Müşteri Geldi
+              </button>
+              <button
                 onClick={() => setShowBlockModal(true)}
                 className="btn-dark whitespace-nowrap px-6"
               >
@@ -1795,30 +1972,42 @@ export default function BusinessPage() {
 
                         <div className="flex flex-wrap items-center gap-3">
                           {a.status !== "blocked" && (
-                            <select
-                              value={a.staff_id || ""}
-                              onChange={async (e) => {
-                                try {
-                                  await api.patch(
-                                    `/business/appointments/${a._id}`,
-                                    {
-                                      staff_id: e.target.value || null,
-                                    },
-                                  );
-                                  loadAppointments();
-                                } catch (err) {
-                                  alert("Personel atanırken hata oluştu.");
-                                }
-                              }}
-                              className="input text-sm py-1.5 px-3 w-40"
-                            >
-                              <option value="">Personel Seç</option>
-                              {staff.filter(s => s.role === 'staff').map((s) => (
-                                <option key={s._id} value={s._id}>
-                                  {s.name}
-                                </option>
-                              ))}
-                            </select>
+                            <>
+                              <select
+                                value={a.staff_id || ""}
+                                onChange={async (e) => {
+                                  try {
+                                    await api.patch(
+                                      `/business/appointments/${a._id}`,
+                                      {
+                                        staff_id: e.target.value || null,
+                                      },
+                                    );
+                                    loadAppointments();
+                                  } catch (err) {
+                                    alert("Personel atanırken hata oluştu.");
+                                  }
+                                }}
+                                className="input text-sm py-1.5 px-3 w-40"
+                              >
+                                <option value="">Personel Seç</option>
+                                {staff.filter(s => s.role === 'staff').map((s) => (
+                                  <option key={s._id} value={s._id}>
+                                    {s.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => {
+                                  setSelectedAppointmentForExtra(a);
+                                  setExtraServicesToAdd([]);
+                                  setShowExtraServiceModal(true);
+                                }}
+                                className="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                + Ek Hizmet
+                              </button>
+                            </>
                           )}
                           <select
                             value={a.status}
@@ -3220,6 +3409,14 @@ export default function BusinessPage() {
 
                       if (data.success && data.imageUrl) {
                         setGeneratedImageUrl(data.imageUrl);
+                        
+                        // Apply logo overlay if business has a logo
+                        if (businessData?.logo_url) {
+                          await applyLogoOverlay(data.imageUrl);
+                        } else {
+                          setCompositeImageUrl(data.imageUrl);
+                        }
+                        
                         setCreditsRemaining(
                           data.remainingCredits !== undefined
                             ? data.remainingCredits
@@ -3258,7 +3455,7 @@ export default function BusinessPage() {
                 </button>
               </div>
 
-              {generatedImageUrl && (
+              {compositeImageUrl && (
                 <div className="mt-6 bg-white rounded-2xl p-6 shadow-lg border border-violet-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-2 mb-4">
                     <Sparkles className="w-5 h-5 text-violet-500" />
@@ -3268,14 +3465,14 @@ export default function BusinessPage() {
                   </div>
                   <div className="relative rounded-xl overflow-hidden border border-slate-200">
                     <img
-                      src={generatedImageUrl}
+                      src={compositeImageUrl}
                       alt="AI Generated"
                       className="w-full h-auto object-cover"
                     />
                   </div>
                   <div className="mt-4 flex justify-end">
                     <a
-                      href={generatedImageUrl}
+                      href={compositeImageUrl}
                       download="ai-generated-image.png"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -3689,11 +3886,10 @@ export default function BusinessPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              E-posta *
+              E-posta
             </label>
             <input
               type="email"
-              required
               value={branchForm.email}
               onChange={(e) => setBranchForm({ ...branchForm, email: e.target.value })}
               className="input w-full"
@@ -3752,6 +3948,162 @@ export default function BusinessPage() {
         title="Şubeyi Sil"
         message={`"${selectedBranch?.name}" şubesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
       />
+
+      {/* Walk-in Modal */}
+      <Modal isOpen={showWalkInModal} onClose={() => setShowWalkInModal(false)} title="Hızlı Müşteri Geldi">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Telefon Numarası *
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                value={walkInPhone}
+                onChange={(e) => setWalkInPhone(e.target.value)}
+                className="input flex-1"
+                placeholder="05551234567"
+              />
+              <button
+                onClick={handleSearchCustomer}
+                disabled={searchingCustomer}
+                className="btn-primary px-4"
+              >
+                {searchingCustomer ? "Aranıyor..." : "Ara"}
+              </button>
+            </div>
+          </div>
+
+          {walkInCustomer ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="font-medium text-green-800">Müşteri Bulundu:</p>
+              <p className="text-green-700">{walkInCustomer.name} - {walkInCustomer.phone}</p>
+            </div>
+          ) : walkInNewCustomer.phone ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+              <p className="font-medium text-amber-800">Yeni Müşteri Kaydı:</p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Ad Soyad *
+                </label>
+                <input
+                  type="text"
+                  value={walkInNewCustomer.name}
+                  onChange={(e) => setWalkInNewCustomer({ ...walkInNewCustomer, name: e.target.value })}
+                  className="input w-full"
+                  placeholder="Müşteri Adı"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Hizmetler *
+            </label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {services.map((service) => (
+                <label key={service._id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={walkInServices.includes(service._id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setWalkInServices([...walkInServices, service._id]);
+                      } else {
+                        setWalkInServices(walkInServices.filter((id) => id !== service._id));
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-700">{service.name}</p>
+                    <p className="text-sm text-slate-500">{service.duration} dakika - ₺{service.price}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              onClick={() => {
+                setShowWalkInModal(false);
+                setWalkInPhone("");
+                setWalkInCustomer(null);
+                setWalkInNewCustomer({ name: "", phone: "" });
+                setWalkInServices([]);
+              }}
+              className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleCreateWalkIn}
+              className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-lg shadow-md transition-all"
+            >
+              Randevu Oluştur
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Extra Services Modal */}
+      <Modal isOpen={showExtraServiceModal} onClose={() => setShowExtraServiceModal(false)} title="Ek Hizmet Ekle">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-slate-600 mb-4">
+              {selectedAppointmentForExtra?.customer_id?.name} için ek hizmet seçin:
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Hizmetler *
+            </label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {services.map((service) => (
+                <label key={service._id} className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={extraServicesToAdd.includes(service._id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setExtraServicesToAdd([...extraServicesToAdd, service._id]);
+                      } else {
+                        setExtraServicesToAdd(extraServicesToAdd.filter((id) => id !== service._id));
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-700">{service.name}</p>
+                    <p className="text-sm text-slate-500">{service.duration} dakika - ₺{service.price}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              onClick={() => {
+                setShowExtraServiceModal(false);
+                setSelectedAppointmentForExtra(null);
+                setExtraServicesToAdd([]);
+              }}
+              className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleAddExtraServices}
+              className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg shadow-md transition-all"
+            >
+              Ekle
+            </button>
+          </div>
+        </div>
+      </Modal>
     </AppLayout>
   );
 }

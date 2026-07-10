@@ -30,6 +30,7 @@ import {
   uploadContacts,
   createBranch,
   listBranches,
+  addExtraServices,
 } from "../controllers/business.controller.js";
 import { generateImageController } from "../controllers/ai.controller.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -322,6 +323,9 @@ router.delete("/products/:id", asyncHandler(deleteProduct));
 // Branch routes (Enterprise only)
 router.post("/branches", asyncHandler(createBranch));
 router.get("/branches", asyncHandler(listBranches));
+
+// Extra services route
+router.patch("/appointments/:id/extra-services", asyncHandler(addExtraServices));
 
 // Staff routes
 router.get("/staff/appointments", requireAuth, requireRole("staff"), asyncHandler(getStaffAppointments));

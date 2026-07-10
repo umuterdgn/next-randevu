@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import {
   Briefcase,
@@ -13,7 +14,10 @@ import {
   DollarSign,
   Settings,
   Package,
+  MessageCircle,
 } from "lucide-react";
+import api from "../api/client";
+import Modal from "./Modal";
 
 const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, requiresEnterprise, businessData }) => {
   const { pathname } = useLocation();
@@ -55,6 +59,32 @@ const Item = ({ to, label, icon: Icon, collapsed, onNavigate, requiresFull, requ
 };
 
 export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, user, businessData }) {
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [sendingSupport, setSendingSupport] = useState(false);
+
+  const handleSendSupport = async () => {
+    if (!supportMessage.trim()) {
+      toast.error("Lütfen bir mesaj girin.");
+      return;
+    }
+
+    try {
+      setSendingSupport(true);
+      const { data } = await api.post("/support", { message: supportMessage });
+      if (data.success) {
+        toast.success("Destek talebiniz başarıyla gönderildi!");
+        setShowSupportModal(false);
+        setSupportMessage("");
+      }
+    } catch (error) {
+      console.error("Support submission error:", error);
+      toast.error("Destek talebi gönderilirken hata oluştu.");
+    } finally {
+      setSendingSupport(false);
+    }
+  };
+
   const ownerMenu = [
     { to: "/owner", label: "Owner Dashboard", icon: LayoutDashboard },
     { to: "/owner/applications", label: "Applications", icon: Sparkles },
@@ -125,7 +155,56 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             />
           ))}
         </nav>
+
+        {/* Support Button */}
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <button
+            onClick={() => setShowSupportModal(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all"
+          >
+            <MessageCircle className="h-5 w-5 shrink-0" />
+            <span className={`truncate whitespace-nowrap ${collapsed ? "md:hidden" : "block"}`}>
+              Destek & Öneri
+            </span>
+          </button>
+        </div>
       </aside>
+
+      {/* Support Modal */}
+      <Modal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} title="Destek & Öneri">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Mesajınız *
+            </label>
+            <textarea
+              value={supportMessage}
+              onChange={(e) => setSupportMessage(e.target.value)}
+              className="input w-full h-32 resize-none"
+              placeholder="Sorunuzu veya önerinizi buraya yazın..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              onClick={() => {
+                setShowSupportModal(false);
+                setSupportMessage("");
+              }}
+              className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              disabled={sendingSupport}
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleSendSupport}
+              disabled={sendingSupport}
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md transition-all disabled:opacity-50"
+            >
+              {sendingSupport ? "Gönderiliyor..." : "Gönder"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

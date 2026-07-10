@@ -12,6 +12,7 @@ const appointmentSchema = new mongoose.Schema(
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: false },
     customer_phone: { type: String, trim: true },
     service_id: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: false },
+    services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
     service_type: { type: String, trim: true },
     staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", default: null },
     starts_at: { type: Date, required: true, index: true },

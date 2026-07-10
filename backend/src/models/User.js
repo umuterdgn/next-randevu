@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     phone: { type: String, default: "" },
     password: { type: String, required: true, minlength: 6, select: false },
-    role: { type: String, enum: ["owner", "admin", "staff", "business", "business_admin"], default: "admin" },
+    role: { type: String, enum: ["owner", "admin", "cashier", "staff", "business", "business_admin"], default: "admin" },
     is_chain_owner: { type: Boolean, default: false },
     is_active: { type: Boolean, default: true },
     resetPasswordToken: { type: String },

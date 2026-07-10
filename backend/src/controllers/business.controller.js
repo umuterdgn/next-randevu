@@ -1138,3 +1138,72 @@ export const listBranches = async (req, res) => {
     res.status(500).json({ success: false, message: "Şubeler listelenirken bir hata oluştu." });
   }
 };
+
+export const addExtraServices = async (req, res) => {
+  try {
+    const { service_ids } = req.body;
+    const appointmentId = req.params.id;
+
+    if (!service_ids || !Array.isArray(service_ids) || service_ids.length === 0) {
+      return res.status(400).json({ success: false, message: "Geçerli hizmet ID'leri gerekli." });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: "Randevu bulunamadı." });
+    }
+
+    // Get service details for price and duration calculation
+    const services = await Service.find({ _id: { $in: service_ids } });
+    if (services.length === 0) {
+      return res.status(404).json({ success: false, message: "Hizmetler bulunamadı." });
+    }
+
+    // Add new services to the services array
+    const currentServices = appointment.services || [];
+    const newServiceIds = service_ids.filter(id => !currentServices.includes(id));
+    appointment.services = [...currentServices, ...newServiceIds];
+
+    // Recalculate end time based on total duration
+    let totalDuration = 0;
+    let totalPrice = 0;
+
+    for (const serviceId of appointment.services) {
+      const service = services.find(s => s._id.toString() === serviceId.toString()) || 
+                     await Service.findById(serviceId);
+      if (service) {
+        totalDuration += service.duration || 0;
+        totalPrice += service.price || 0;
+      }
+    }
+
+    // Update end time
+    const startTime = new Date(appointment.starts_at);
+    appointment.ends_at = new Date(startTime.getTime() + totalDuration * 60000);
+
+    await appointment.save();
+
+    await logAudit({
+      business_id: req.business_id,
+      user_id: req.user?._id || null,
+      action: "EXTRA_SERVICES_ADDED",
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: req.ip || "",
+      user_agent: req.headers["user-agent"] || "",
+      meta: { appointment_id: appointmentId, service_ids, total_duration: totalDuration, total_price: totalPrice },
+    });
+
+    res.json({
+      success: true,
+      message: "Ek hizmetler başarıyla eklendi.",
+      appointment,
+      total_duration: totalDuration,
+      total_price: totalPrice,
+    });
+  } catch (error) {
+    console.error("Extra services addition error:", error);
+    res.status(500).json({ success: false, message: "Ek hizmetler eklenirken bir hata oluştu." });
+  }
+};

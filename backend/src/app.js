@@ -19,6 +19,7 @@ import appointmentRoutes from "./routes/appointment.routes.js";
 import calendarRoutes from "./routes/calendar.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
+import supportRoutes from "./routes/support.routes.js";
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use("/api/business", requireAuth, businessRoutes);
 app.use("/api/ai", requireAuth, aiRoutes);
 app.use("/api/business", requireAuth, financeRoutes);
 app.use("/api/payment", requireAuth, paymentRoutes);
+app.use("/api/support", supportRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
