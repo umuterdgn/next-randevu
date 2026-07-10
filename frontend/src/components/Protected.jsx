@@ -19,7 +19,7 @@ export default function Protected({ children, role }) {
 
   // Allow business, business_admin, cashier, and admin roles to access business routes
   if (role && user.role !== role && !(role === "admin" && (user.role === "business" || user.role === "business_admin" || user.role === "cashier" || user.role === "admin"))) {
-    return <Navigate to={user.role === "owner" ? "/owner" : "/business"};
+    return <Navigate to={user.role === "owner" ? "/owner" : "/business"} />;
   }
   return children;
 }
