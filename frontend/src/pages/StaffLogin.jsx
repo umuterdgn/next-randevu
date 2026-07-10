@@ -26,7 +26,12 @@ export default function StaffLogin() {
         toast.success("Giriş başarılı!");
         // Small delay to ensure state is updated before navigation
         setTimeout(() => {
-          navigate("/staff/dashboard");
+          // Cashiers redirect to business dashboard, other staff to staff portal
+          if (response.data.user.role === 'cashier') {
+            navigate("/business");
+          } else {
+            navigate("/staff/dashboard");
+          }
         }, 100);
       }
     } catch (error) {

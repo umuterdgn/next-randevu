@@ -4,7 +4,7 @@ const staffSchema = new mongoose.Schema(
   {
     business_id: { type: String, required: true, index: true },
     name: { type: String, required: true },
-    role: { type: String, enum: ["staff", "dealer"], required: true },
+    role: { type: String, enum: ["staff", "dealer", "cashier"], required: true },
     phone: { type: String },
     email: { type: String },
     password: { type: String, required: true },

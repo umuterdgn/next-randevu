@@ -750,7 +750,7 @@ export default function BusinessPage() {
   };
 
   const applyLogoOverlay = async (imageUrl) => {
-    if (!businessData?.logo_url) {
+    if (!settings?.logo_url) {
       setCompositeImageUrl(imageUrl);
       return;
     }
@@ -774,7 +774,7 @@ export default function BusinessPage() {
         new Promise((resolve, reject) => {
           logoImage.onload = resolve;
           logoImage.onerror = reject;
-          logoImage.src = businessData.logo_url;
+          logoImage.src = settings.logo_url;
         })
       ]);
 
@@ -3412,7 +3412,7 @@ export default function BusinessPage() {
                         setGeneratedImageUrl(data.imageUrl);
                         
                         // Apply logo overlay if business has a logo
-                        if (businessData?.logo_url) {
+                        if (settings?.logo_url) {
                           await applyLogoOverlay(data.imageUrl);
                         } else {
                           setCompositeImageUrl(data.imageUrl);

@@ -69,6 +69,8 @@ router.use(
   requireRole(
     "admin",
     "staff",
+    "cashier",
+    "dealer",
     "business",
     "owner",
     "business_owner",

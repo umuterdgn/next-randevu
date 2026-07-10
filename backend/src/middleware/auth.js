@@ -32,7 +32,7 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 
   // Fetch user from appropriate model based on role
   let user;
-  if (userRole === 'staff') {
+  if (userRole === 'staff' || userRole === 'cashier' || userRole === 'dealer') {
     user = await Staff.findById(userId).lean();
   } else {
     user = await User.findById(userId).lean();
